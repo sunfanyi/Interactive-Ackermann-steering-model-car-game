@@ -47,6 +47,21 @@ def extract_color(img, color):
     return result
 
 
+def mask2xy(img_mask):
+    """
+    From mask to xy coordinates
+    :param img_mask: [h, w, 3] or [h, w, 1]
+    :return: xy coordinates with shape [N, 2]
+    """
+    if len(img_mask.shape) == 3:  # RGB
+        img_mask = cv2.cvtColor(img_mask, cv2.COLOR_BGR2GRAY)
+
+    coords = np.argwhere(img_mask > 0)
+    coords = coords.reshape((-1, 2))  # N x 2
+    coords = np.fliplr(coords)  # (y, x) to (x, y)
+    return coords
+
+
 def show_img(image, title=None):
     image = image.astype(np.uint8)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
