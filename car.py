@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# @File    : car.py
+# @Time    : 18/02/2023
+# @Author  : Fanyi Sun
+# @Github  : https://github.com/sunfanyi
+# @Software: PyCharm
+
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D, art3d
@@ -81,13 +88,13 @@ class Car:
         y2 = center2[1] * np.ones_like(t)
         z2 = center2[2] + r * np.sin(t)
 
-        lines1 = np.array([x1, y1, z1, np.ones(len(x1))])
+        lines1 = np.array([x1, y1, z1, np.ones_like(x1)])
         lines_universe = np.matmul(T, lines1).astype('float')
         x1 = lines_universe[0]
         y1 = lines_universe[1]
         z1 = lines_universe[2]
 
-        lines2 = np.array([x2, y2, z2, np.ones(len(x2))])
+        lines2 = np.array([x2, y2, z2, np.ones_like(x2)])
         lines_universe = np.matmul(T, lines2).astype('float')
         x2 = lines_universe[0]
         y2 = lines_universe[1]
