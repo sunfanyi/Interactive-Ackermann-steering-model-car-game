@@ -47,23 +47,34 @@ def add_translation(R, t=sp.Matrix([0, 0, 0, 1])):
 
 def eqnprint(symbol, alias=None, expression=None, ans=None):
     if ans is None:
-        display(Math(f'{symbol.subs(alias)}={expression.subs(alias)}'))
+        expr_latex = sp.latex(symbol.subs(alias)) + '=' + sp.latex(expression.subs(alias))
+        display(Math(expr_latex))
     elif expression is None:
-        display(Math(f'{symbol.subs(alias)}={ans}'))
+        display(Math(sp.latex(symbol.subs(alias)) + '=' + str(ans)))
     else:
-        display(Math(f'{symbol.subs(alias)}={expression.subs(alias)}={ans}'))
+        expr_latex = sp.latex(symbol.subs(alias)) + '=' + sp.latex(expression.subs(alias)) + '=' + str(ans)
+        display(Math(expr_latex))
 
 
-def symprint(symbol, sup, sub, dot=False):
+def get_sym(symbol, sub='', sup='', dot=False, show=False):
+    if (sup == '') & (sub == ''):
+        info = r"{}".format(symbol)
+    elif sup == '':
+        info = r"{}_{{{}}}".format(symbol, sub)
+    elif sub == '':
+        info = r"^{}{}".format(sup, symbol)
+    else:
+        info = r"^{{{}}}{}_{{{}}}".format(sup, symbol, sub)
+
     if dot == 1:
-        symbol = r'\dot{%s}' % symbol
+        info = r'\dot{%s}' % info
     elif dot == 2:
-        symbol = r'\ddot{%s}' % symbol
-    if sup == '':
-        info = r"{}_{}".format(symbol, sub)
-    else:
-        info = r"^{}{}_{}".format(sup, symbol, sub)
-    display(sp.symbols(info))
+        info = r'\ddot{%s}' % info
+
+    if show:
+        display(sp.symbols(info))
+
+    return sp.symbols(info)
 
 
 def matprint(matrix, alias=None):
