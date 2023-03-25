@@ -26,9 +26,9 @@ class Car:
 
         self.get_cuboid_corners()
 
-    def update_plot(self, T=np.eye(4)):
-        self.plot_body(T)
-        # self.plot_wheels(T)
+    def update_plot(self, ax, T=np.eye(4)):
+        self.plot_body(ax, T)
+        self.plot_wheels(ax, T)
 
     def get_cuboid_corners(self):
         # corner points of the cuboid
@@ -41,7 +41,7 @@ class Car:
         self.bot_rear_left = np.array([-self.length / 2, self.width / 2, self.height])
         self.bot_rear_right = np.array([-self.length / 2, -self.width / 2, self.height])
 
-    def plot_body(self, T):
+    def plot_body(self, ax, T):
         # line segments for the car body
         body_lines = [
             np.array([self.top_front_left, self.top_front_right]),
@@ -57,15 +57,13 @@ class Car:
             np.array([self.top_rear_right, self.bot_rear_right]),
             np.array([self.top_rear_left, self.bot_rear_left])
         ]
-        lines = []
         for line in body_lines:
             line = line.T
             line = np.vstack([line, np.ones(line.shape[1])])
-            line_universe = np.matmul(T, line)  # [4, 2], 4=[x, y, z, 1], 2=[p1, p2]
-            lines.append(line_universe[:3, :].T)
-        return lines
+            line_universe = np.matmul(T, line)
+            ax.plot(line_universe[0], line_universe[1], line_universe[2], 'b')
 
-    def plot_wheels(self, T):
+    def plot_wheels(self, ax, T):
         x_shift = np.array([(self.length - self.wheel_base) / 2, 0, 0])
         y_shift = np.array([0, self.wheel_width / 2, 0])
         z_shift = np.array([0, 0, -self.wheel_offset])
@@ -75,7 +73,7 @@ class Car:
         self.plot_wheel(ax, self.top_rear_left + x_shift + z_shift, y_shift, T)
         self.plot_wheel(ax, self.top_rear_right + x_shift + z_shift, y_shift, T)
 
-    def plot_wheel(self, center, y_shift, T, num_points=20):
+    def plot_wheel(self, ax, center, y_shift, T, num_points=20):
         r = self.wheel_radius
 
         center1 = center + y_shift
@@ -91,21 +89,19 @@ class Car:
         z2 = center2[2] + r * np.sin(t)
 
         lines1 = np.array([x1, y1, z1, np.ones_like(x1)])
-        lines1_universe = np.matmul(T, lines1).astype('float')
-        x1 = lines1_universe[0]
-        y1 = lines1_universe[1]
-        z1 = lines1_universe[2]
+        lines_universe = np.matmul(T, lines1).astype('float')
+        x1 = lines_universe[0]
+        y1 = lines_universe[1]
+        z1 = lines_universe[2]
 
         lines2 = np.array([x2, y2, z2, np.ones_like(x2)])
-        lines2_universe = np.matmul(T, lines2).astype('float')
-        x2 = lines2_universe[0]
-        y2 = lines2_universe[1]
-        z2 = lines2_universe[2]
+        lines_universe = np.matmul(T, lines2).astype('float')
+        x2 = lines_universe[0]
+        y2 = lines_universe[1]
+        z2 = lines_universe[2]
 
-        # ax.plot(x1, y1, z1, 'r')
-        # ax.plot(x2, y2, z2, 'r')
-
-
+        ax.plot(x1, y1, z1, 'r')
+        ax.plot(x2, y2, z2, 'r')
 
         # fill cylinder circular surface
         # ax.plot_surface(np.vstack([x1, x2]), np.vstack([y1, y2]),
