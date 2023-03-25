@@ -6,31 +6,39 @@
 # @Software: PyCharm
 
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D, art3d
+import pygame
+
+import game_function as gf
 
 
 class Car:
-    def __init__(self, length, width, height,
-                 wheel_radius, wheel_width, wheel_offset, wheel_base=None):
-        self.length = length
-        self.width = width
-        self.height = height
-        self.wheel_radius = wheel_radius
-        self.wheel_width = wheel_width
-        self.wheel_offset = wheel_offset
-        if wheel_base is None:
-            self.wheel_base = self.length - 2 * self.wheel_radius
-        else:
-            self.wheel_base = wheel_base
+    def __init__(self, settings, screen):
 
-        self.get_cuboid_corners()
+        self.settings = settings
+        self.screen = screen
 
-    def update_plot(self, T=np.eye(4)):
-        self.plot_body(T)
-        # self.plot_wheels(T)
+        scale = 40
+        self.length = 5 * scale
+        self.width = 2 * scale
+        self.height = 1.5 * scale
+        self.wheel_radius = 0.5 * scale
+        self.wheel_width = 0.3 * scale
+        self.wheel_offset = 0.2 * scale
+        self.wheel_base = 3 * scale
 
-    def get_cuboid_corners(self):
+        self.get_body_lines()
+
+        # Transform matrix
+        self.T_body = np.eye(4)
+
+        self.moving_right = False
+        self.moving_left = False
+        self.moving_up = False
+        self.moving_down = False
+
+
+
+    def get_body_lines(self):
         # corner points of the cuboid
         self.top_front_left = np.array([self.length / 2, self.width / 2, 0])
         self.top_front_right = np.array([self.length / 2, -self.width / 2, 0])
@@ -41,9 +49,8 @@ class Car:
         self.bot_rear_left = np.array([-self.length / 2, self.width / 2, self.height])
         self.bot_rear_right = np.array([-self.length / 2, -self.width / 2, self.height])
 
-    def plot_body(self, T):
         # line segments for the car body
-        body_lines = [
+        self.body_lines_local = [
             np.array([self.top_front_left, self.top_front_right]),
             np.array([self.top_front_right, self.top_rear_right]),
             np.array([self.top_rear_right, self.top_rear_left]),
@@ -57,14 +64,39 @@ class Car:
             np.array([self.top_rear_right, self.bot_rear_right]),
             np.array([self.top_rear_left, self.bot_rear_left])
         ]
-        lines = []
-        for line in body_lines:
+
+    def update_T(self, T):
+        self.T_body = np.matmul(T, self.T_body)
+
+    def update(self):
+
+        self.car_moving()
+        self.body_lines = []
+
+        # apply transformation matrix T to each line segment
+        for line in self.body_lines_local:
             line = line.T
             line = np.vstack([line, np.ones(line.shape[1])])
-            line_universe = np.matmul(T, line)  # [4, 2], 4=[x, y, z, 1], 2=[p1, p2]
-            lines.append(line_universe[:3, :].T)
-        return lines
+            line_universe = np.matmul(self.T_body, line)  # [4, 2], 4=[x, y, z, 1], 2=[p1, p2]
+            self.body_lines.append(line_universe[:3, :].T)
 
+    def car_moving(self):
+        T_new = np.eye(4)
+        if self.moving_right:
+            T_new[0, 3] = self.settings.car_speed_factor
+        if self.moving_left:
+            T_new[0, 3] = -self.settings.car_speed_factor
+        if self.moving_up:
+            T_new[1, 3] = -self.settings.car_speed_factor
+        if self.moving_down:
+            T_new[1, 3] = self.settings.car_speed_factor
+
+        self.update_T(T_new)
+
+    def draw(self):
+        for line in self.body_lines:
+            gf.draw_line(self.screen, line)
+'''
     def plot_wheels(self, T):
         x_shift = np.array([(self.length - self.wheel_base) / 2, 0, 0])
         y_shift = np.array([0, self.wheel_width / 2, 0])
@@ -122,25 +154,4 @@ class Car:
         # ax.add_patch(circle2)
         # art3d.pathpatch_2d_to_3d(circle1, z=center1[1], zdir="y")
         # art3d.pathpatch_2d_to_3d(circle2, z=center2[1], zdir="y")
-
-
-if __name__ == '__main__':
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    car = Car(length=5, width=2, height=1.5,
-              wheel_radius=0.5, wheel_width=0.3,
-              wheel_offset=0.2, wheel_base=3)
-    from tools_kinematics import rotation, add_translation
-    R = rotation(np.pi / 3, 'z')
-    T = add_translation(R)
-    car.update_plot(ax, T)
-
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-    ax.set_xlim([-3, 3])
-    ax.set_ylim([-3, 3])
-    ax.set_zlim([-2, 2])
-
-    plt.show()
+'''
