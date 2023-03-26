@@ -68,11 +68,8 @@ def draw_line(screen, line, color=(0, 0, 0), linewidth=1):
     p1 = line[0]
     p2 = line[1]
 
-    x1_2d, y1_2d = point_3d_to_2d(p1[0], p1[1], p1[2])
-    x2_2d, y2_2d = point_3d_to_2d(p2[0], p2[1], p2[2])
-
-    p1_2d = (origin2d[0] + x1_2d, origin2d[1] - y1_2d)
-    p2_2d = (origin2d[0] + x2_2d, origin2d[1] - y2_2d)
+    p1_2d = point_3d_to_2d(p1[0], p1[1], p1[2])
+    p2_2d = point_3d_to_2d(p2[0], p2[1], p2[2])
 
     pygame.draw.line(screen, color, p1_2d, p2_2d, linewidth)
 
@@ -94,6 +91,8 @@ def point_3d_to_2d(x, y, z):
     R = np.matmul(x_rotation, z_rotation)
 
     x_2d, y_2d, z_2d = np.matmul(R, np.array([x, y, z]))
+
+    x_2d, y_2d = (origin2d[0] + x_2d, origin2d[1] - y_2d)
 
     return x_2d, y_2d
 
