@@ -28,7 +28,6 @@ def check_event(car):
             check_keyup_event(event, car)
 
 
-
 def check_keydown_event(event, car):
     # if event.key == pygame.K_q:
     #     quit_game(stats)
@@ -41,25 +40,37 @@ def check_keydown_event(event, car):
 
 
 def check_keyup_event(event, car):
-    if event.key == pygame.K_RIGHT:
-        car.moving_right = False
-    elif event.key == pygame.K_LEFT:
-        car.moving_left = False
-    elif event.key == pygame.K_UP:
-        car.moving_up = False
+    if event.key == pygame.K_UP:
+        car.moving_fwd = False
     elif event.key == pygame.K_DOWN:
-        car.moving_down = False
+        car.moving_bwd = False
+    elif event.key == pygame.K_LEFT:
+        car.turning_left = False
+    elif event.key == pygame.K_RIGHT:
+        car.turning_right = False
 
 
 def check_car_moving(event, car):
-    if event.key == pygame.K_RIGHT:
-        car.moving_right = True
-    elif event.key == pygame.K_LEFT:
-        car.moving_left = True
-    elif event.key == pygame.K_UP:
-        car.moving_up = True
+    if event.key == pygame.K_UP:
+        car.moving_fwd = True
     elif event.key == pygame.K_DOWN:
-        car.moving_down = True
+        car.moving_bwd = True
+    elif event.key == pygame.K_LEFT:
+        car.turning_left = True
+    elif event.key == pygame.K_RIGHT:
+        car.turning_right = True
+    # if event.key == pygame.K_UP:
+    #     car.moving_fwd = True
+    #     if event.key == pygame.K_LEFT:
+    #         car.turning_left = True
+    #     elif event.key == pygame.K_RIGHT:
+    #         car.turning_right = True
+    # elif event.key == pygame.K_DOWN:
+    #     car.moving_bwd = True
+    #     if event.key == pygame.K_LEFT:
+    #         car.turning_right = True
+    #     elif event.key == pygame.K_RIGHT:
+    #         car.turning_left = True
 
 
 def update_screen(settings, screen, workspace, my_car):
@@ -89,13 +100,15 @@ def draw_line(screen, line, color=(0, 0, 0), linewidth=1):
 
 
 def point_3d_to_2d(x, y, z):
+    # flip y-axis for visualisation, so anticlockwise becomes negative and clockwise becomes positive
+    y = - y
     x *= x_factor
     y *= y_factor
     z *= z_factor
 
     # Trimetric projection fron 3d to 2d
-    x_rotation = rotation(120/180 * np.pi, 'x').T
-    z_rotation = rotation(-15/180 * np.pi, 'z').T
+    x_rotation = rotation(-60/180 * np.pi, 'x')
+    z_rotation = rotation(-15/180 * np.pi, 'z')
 
     R = np.matmul(x_rotation, z_rotation)
 

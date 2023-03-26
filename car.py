@@ -31,10 +31,12 @@ class Car:
         # Transform matrix
         self.T_body = np.eye(4)
 
-        self.moving_right = False
-        self.moving_left = False
-        self.moving_up = False
-        self.moving_down = False
+        self.moving_fwd = False
+        self.moving_bwd = False
+        self.turning_left = False
+        self.turning_right = False
+        self.car_orientation = 0  # in radians
+        self.car_origin = np.array([0, 0, 0, 1])  # generalised coordinates
 
 
 
@@ -65,9 +67,6 @@ class Car:
             np.array([self.top_rear_left, self.bot_rear_left])
         ]
 
-    def update_T(self, T):
-        self.T_body = np.matmul(T, self.T_body)
-
     def update(self):
 
         self.car_moving()
@@ -81,21 +80,31 @@ class Car:
             self.body_lines.append(line_universe[:3, :].T)
 
     def car_moving(self):
-        T_new = np.eye(4)
-        if self.moving_right:
-            T_new[0, 3] = self.settings.car_speed_factor
-        if self.moving_left:
-            T_new[0, 3] = -self.settings.car_speed_factor
-        if self.moving_up:
-            T_new[1, 3] = -self.settings.car_speed_factor
-        if self.moving_down:
-            T_new[1, 3] = self.settings.car_speed_factor
+        # y-axis was flipped, so anticlockwise becomes negative and clockwise becomes positive
+        if self.moving_fwd:
+            if self.turning_left:  # anticlockwise around z
+                self.car_orientation -= self.settings.car_turning_speed
+            if self.turning_right:  # clockwise around z
+                self.car_orientation += self.settings.car_turning_speed
 
-        self.update_T(T_new)
+            self.car_origin[0] += self.settings.car_speed_factor * np.cos(self.car_orientation)  # x
+            self.car_origin[1] += self.settings.car_speed_factor * np.sin(self.car_orientation)  # y
+        if self.moving_bwd:
+            if self.turning_left:  # anticlockwise around z
+                self.car_orientation += self.settings.car_turning_speed
+            if self.turning_right:  # clockwise around z
+                self.car_orientation -= self.settings.car_turning_speed
+
+            self.car_origin[0] -= self.settings.car_speed_factor * np.cos(self.car_orientation)  # x
+            self.car_origin[1] -= self.settings.car_speed_factor * np.sin(self.car_orientation)  # y
+
+        R = gf.rotation(self.car_orientation, 'z')
+        self.T_body = gf.add_translation(R, self.car_origin)
 
     def draw(self):
         for line in self.body_lines:
             gf.draw_line(self.screen, line)
+
 '''
     def plot_wheels(self, T):
         x_shift = np.array([(self.length - self.wheel_base) / 2, 0, 0])
