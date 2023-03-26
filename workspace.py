@@ -72,9 +72,6 @@ class Workspace:
             self.screen.blit(tick_label, (origin_x + tick_x - 10, origin_y - tick_y))
 
 
-        line = [origin3d, [0, 1000, 0]]
-        gf.draw_line(self.screen, line, (255, 0, 0), 2)
-
 
 
 

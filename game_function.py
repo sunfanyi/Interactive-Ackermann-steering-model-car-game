@@ -29,13 +29,6 @@ def check_event(car):
 
 
 def check_keydown_event(event, car):
-    # if event.key == pygame.K_q:
-    #     quit_game(stats)
-    # elif event.key == pygame.K_p:
-    #     start_game(settings, stats, sb, screen, ship, bullets, aliens)
-    # elif event.key == pygame.K_SPACE and stats.game_active:
-    #     fire_bullet(settings, screen, ship, bullets)
-    # else:
     check_car_moving(event, car)
 
 
@@ -59,27 +52,14 @@ def check_car_moving(event, car):
         car.turning_left = True
     elif event.key == pygame.K_RIGHT:
         car.turning_right = True
-    # if event.key == pygame.K_UP:
-    #     car.moving_fwd = True
-    #     if event.key == pygame.K_LEFT:
-    #         car.turning_left = True
-    #     elif event.key == pygame.K_RIGHT:
-    #         car.turning_right = True
-    # elif event.key == pygame.K_DOWN:
-    #     car.moving_bwd = True
-    #     if event.key == pygame.K_LEFT:
-    #         car.turning_right = True
-    #     elif event.key == pygame.K_RIGHT:
-    #         car.turning_left = True
 
 
-def update_screen(settings, screen, workspace, my_car):
+def update_screen(settings, screen, workspace, car):
 
     screen.fill(settings.bg_color)
 
     workspace.draw()
-    # for
-    my_car.draw()
+    car.draw()
 
     pygame.display.flip()
 
@@ -100,7 +80,8 @@ def draw_line(screen, line, color=(0, 0, 0), linewidth=1):
 
 
 def point_3d_to_2d(x, y, z):
-    # flip y-axis for visualisation, so anticlockwise becomes negative and clockwise becomes positive
+    # flip y-axis for visualisation,
+    # so anticlockwise becomes negative and clockwise becomes positive
     y = - y
     x *= x_factor
     y *= y_factor
@@ -115,9 +96,6 @@ def point_3d_to_2d(x, y, z):
     x_2d, y_2d, z_2d = np.matmul(R, np.array([x, y, z]))
 
     return x_2d, y_2d
-
-
-
 
 
 def rotation(theta, direction):

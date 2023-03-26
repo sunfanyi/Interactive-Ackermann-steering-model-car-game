@@ -6,7 +6,6 @@
 # @Software: PyCharm
 
 import pygame
-import numpy as np
 
 import game_function as gf
 from workspace import Workspace
