@@ -11,10 +11,11 @@ import pygame
 from settings import Settings
 
 my_settings = Settings()
+
 x_factor = my_settings.x_factor
 y_factor = my_settings.y_factor
 z_factor = my_settings.z_factor
-origin2d = my_settings.origin
+origin2d = my_settings.origin2d
 
 
 def check_event(car):
@@ -54,29 +55,40 @@ def check_car_moving(event, car):
         car.turning_right = True
 
 
-def update_screen(settings, screen, workspace, car):
-
+def update_screen(settings, screen, workspace, car, large_car, i):
+    # global x_factor
+    # global y_factor
+    # global z_factor
+    # global origin2d
+    # settings.zoom_in()
+    # x_factor = settings.x_factor
+    # y_factor = settings.y_factor
+    # z_factor = settings.z_factor
+    # origin2d = settings.origin2d
     screen.fill(settings.bg_color)
 
     workspace.draw()
     car.draw()
+    large_car.draw()
+    # zoomed_screen = pygame.transform.smoothscale(screen, (800-i, 600-i))
+    # screen.blit(zoomed_screen, ((800-i)//2, (600-i)//2))
 
     pygame.display.flip()
 
 
-def draw_line(screen, line, color=(0, 0, 0), linewidth=1):
+def draw_line(screen, line, color=(0, 0, 0), linewidth=1, offset=origin2d):
     p1 = line[0]
     p2 = line[1]
 
-    p1_2d = point_3d_to_2d(p1[0], p1[1], p1[2])
-    p2_2d = point_3d_to_2d(p2[0], p2[1], p2[2])
+    p1_2d = point_3d_to_2d(p1[0], p1[1], p1[2], offset=offset)
+    p2_2d = point_3d_to_2d(p2[0], p2[1], p2[2], offset=offset)
 
     pygame.draw.line(screen, color, p1_2d, p2_2d, linewidth)
 
     return p1_2d, p2_2d
 
 
-def point_3d_to_2d(x, y, z):
+def point_3d_to_2d(x, y, z, offset=origin2d):
     # flip y-axis for visualisation,
     # so anticlockwise becomes negative and clockwise becomes positive
     y = - y
@@ -92,9 +104,16 @@ def point_3d_to_2d(x, y, z):
 
     x_2d, y_2d, z_2d = np.matmul(R, np.array([x, y, z]))
 
-    x_2d, y_2d = (origin2d[0] + x_2d, origin2d[1] - y_2d)
+    x_2d, y_2d = (offset[0] + x_2d, offset[1] - y_2d)
 
     return x_2d, y_2d
+
+
+def cv2_to_pygame(image):
+    # Rotate and flip to convert cv2 to pygame
+    image = np.fliplr(image)
+    image = np.rot90(image)
+    return image
 
 
 def rotation(theta, direction):

@@ -13,9 +13,10 @@ import game_function as gf
 
 
 class Workspace:
-    def __init__(self, settings, screen):
+    def __init__(self, settings, screen, car):
         self.screen = screen
         self.settings = settings
+        self.car = car
 
         img = cv2.imread('CWMap.jpg')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -39,9 +40,7 @@ class Workspace:
         warped = cv2.warpPerspective(img, M, (self.settings.screen_width,
                                               self.settings.screen_height))
 
-        # Rotate and flip to convert cv2 to pygame
-        warped = np.fliplr(warped)
-        warped = np.rot90(warped)
+        warped = gf.cv2_to_pygame(warped)
 
         # Convert black pixels caused by non-affine transformation to white
         gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
@@ -49,12 +48,58 @@ class Workspace:
         self.map_img2d = warped.copy()
         self.map_img2d[black_pixels] = [255, 255, 255]
 
-        self.map_surface = pygame.surfarray.make_surface(self.map_img2d)
-
     def draw(self):
-        self.screen.blit(self.map_surface, (0, 0))
-
+        self.draw_map()
         self.draw_axes()
+
+    def draw_map(self):
+        merged_surface = pygame.Surface((self.settings.screen_width,
+                                         self.settings.screen_height), pygame.SRCALPHA)
+
+        map_surface = pygame.surfarray.make_surface(self.map_img2d)
+        merged_surface.blit(map_surface, (0, 0))
+
+        # for the zoomed in map:
+        window_w = self.settings.zoom_region['window_width']
+        window_h = self.settings.zoom_region['window_height']
+        zoom_factor = self.settings.zoom_region['factor']
+        crop_size_w = window_w / zoom_factor / 2
+        crop_size_h = window_h / zoom_factor / 2
+
+        zoomed_map_surface = pygame.Surface((window_w+2, window_h+2))
+
+        # Crop:
+        start_row = int(self.car.car_origin2d[0] - crop_size_w)
+        start_col = int(self.car.car_origin2d[1] - crop_size_h)
+        end_row = int(self.car.car_origin2d[0] + crop_size_w)
+        end_col = int(self.car.car_origin2d[1] + crop_size_h)
+        cropped = self.map_img2d[start_row:end_row, start_col:end_col]
+
+        # Resize
+        scaled = cv2.resize(cropped, None, fx=zoom_factor, fy=zoom_factor,
+                            interpolation=cv2.INTER_CUBIC)
+
+        # Embed cropped window
+        leftx = self.settings.screen_width - window_w - 2
+        rightx = self.settings.screen_width
+        topy = 0
+        boty = window_h + 2
+
+        # pad to avoid index error caused by floating rounding
+        padded = np.ones((window_w+2, window_h+2, 3)) * 255
+        padded[:scaled.shape[0], :scaled.shape[1], :] = scaled
+        pygame.surfarray.blit_array(zoomed_map_surface, padded)
+
+        # aligned = pygame.transform.rotate(zoomed_map_surface, 90)
+
+        # # aligned = pygame.transform.rotate(self.map_img2d, 1)
+        merged_surface.blit(zoomed_map_surface, (leftx, topy))
+        self.screen.blit(merged_surface, (0, 0))
+
+        pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (rightx, topy), 2)
+        pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (leftx, boty), 2)
+        pygame.draw.line(self.screen, (0, 0, 0), (rightx, topy), (rightx, boty), 2)
+        pygame.draw.line(self.screen, (0, 0, 0), (leftx, boty), (rightx, boty), 2)
 
     def draw_axes(self):
         origin3d = self.settings.origin3d

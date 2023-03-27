@@ -11,11 +11,10 @@ import game_function as gf
 
 
 class Car:
-    def __init__(self, settings, screen):
+    def __init__(self, settings, screen, scale=40):
         self.settings = settings
         self.screen = screen
 
-        scale = 40
         self.length = 5 * scale
         self.width = 2 * scale
         self.height = 1.5 * scale
@@ -32,7 +31,8 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # Used to update transform matrices
-        self.car_origin = np.array([0, 0, 0, 1])  # generalised coordinates
+        self.car_origin = np.array([0, 0, 0])  # generalised coordinates
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin)
         self.car_orientation = 0  # in radians
         self.wheels_orientation = [0, 0, 0, 0]  # in radians
 
@@ -102,9 +102,9 @@ class Car:
 
         self.wheel_lines_local.append([np.array([x1, y1, z1]), np.array([x2, y2, z2])])
 
-    def car_moving(self):
+    def update(self):
         """
-        Capture keyboard input and move the T matrices for car and wheels.
+        Capture car moving from keyboard input and move the T matrices for car and wheels.
         Y-axis was flipped, so anticlockwise becomes negative and clockwise becomes positive.
         """
         if self.moving_fwd:
@@ -125,11 +125,12 @@ class Car:
             self.car_origin[1] -= self.settings.car_speed_factor * np.sin(self.car_orientation)  # y
 
         R = gf.rotation(self.car_orientation, 'z')
-        self.T_body = gf.add_translation(R, self.car_origin)
-        self.T_wheels = [gf.add_translation(R, self.car_origin) for i in range(4)]
+        car_origin = np.hstack([self.car_origin, 1])  # generalised form
+        self.T_body = gf.add_translation(R, car_origin)
+        self.T_wheels = [gf.add_translation(R, car_origin) for i in range(4)]
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin)
 
-    def update(self):
-        self.car_moving()
+    def apply_transformations(self):
         self.body_lines = []
         self.wheel_lines = []
 
@@ -151,6 +152,7 @@ class Car:
             self.wheel_lines.append([lines1_universe[:3, :].T, lines2_universe[:3, :].T])
 
     def draw(self):
+        self.apply_transformations()
         for line in self.body_lines:
             gf.draw_line(self.screen, line)
         for i in range(4):  # four wheels
@@ -165,3 +167,39 @@ class Car:
                 point1 = line2[j]
                 point2 = line2[j+1]
                 gf.draw_line(self.screen, [point1, point2], (255, 0, 0))
+
+
+class LargeCar(Car):
+    def __init__(self, screen, settings, scale=80):
+        super().__init__(screen, settings, scale)
+        self.car_origin = np.array([0, 0, 0])
+        # a = gf.point_2d_to_3d(10, 10, 10)
+        # print(a)
+        # print(gf.point_3d_to_2d(*a))
+
+    def update_mat(self, car_orientation, wheels_orientation):
+        self.car_orientation = car_orientation
+        self.wheels_orientation = wheels_orientation
+
+        R = gf.rotation(self.car_orientation, 'z')
+        car_origin = np.hstack([self.car_origin, 1])  # generalised form
+        self.T_body = gf.add_translation(R, car_origin)
+        self.T_wheels = [gf.add_translation(R, car_origin) for i in range(4)]
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin)
+
+    def draw(self):
+        self.apply_transformations()
+        for line in self.body_lines:
+            gf.draw_line(self.screen, line, offset=(700, 100))
+        for i in range(4):  # four wheels
+            # each wheel has two line segments
+            line1 = self.wheel_lines[i][0]
+            line2 = self.wheel_lines[i][1]
+            for j in range(len(line1)-1):  # iterate through points
+                point1 = line1[j]
+                point2 = line1[j+1]
+                gf.draw_line(self.screen, [point1, point2], (255, 0, 0), offset=(700, 100))
+
+                point1 = line2[j]
+                point2 = line2[j+1]
+                gf.draw_line(self.screen, [point1, point2], (255, 0, 0), offset=(700, 100))
