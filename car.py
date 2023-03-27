@@ -16,13 +16,13 @@ class Car:
         self.settings = settings
         self.screen = screen
 
-        self.length = 4 * scale
-        self.width = 2 * scale
+        self.length = 3.6 * scale
+        self.width = 2.6 * scale
         self.height = 1.5 * scale
         self.wheel_radius = 0.6 * scale
         self.wheel_width = 0.5 * scale
         self.wheel_offset = 0.2 * scale
-        self.wheel_base = 2.5 * scale
+        self.wheel_base = 2 * scale
 
         self.get_body_lines()
         self.get_wheel_lines()
@@ -33,10 +33,10 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # Used to update transform matrices
-        self.car_origin3d = np.array([0., 0., 0.])  # generalised coordinates
+        self.car_origin3d = np.float32([0., 0., 0.])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
         self.car_orientation = 0  # in radians
-        self.wheels_orientation = [0, 0, 0, 0]  # in radians
+        self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
 
         self.R_view = gf.trimetric_view()
         self.offset = self.settings.origin2d
@@ -49,7 +49,7 @@ class Car:
 
     def get_body_lines(self):
         """
-        Get a list of 12 lines segments representing the car body
+        Get a list of 12 lines segments representing the car body, in car frame
         """
         # corner points of the cuboid
         self.top_front_left = np.array([self.length / 2, self.width / 2, 0])
@@ -97,7 +97,7 @@ class Car:
     def get_each_wheel(self, center, y_shift, num_points=20):
         r = self.wheel_radius
 
-        self.wheel_centers_local.append(center)
+        self.wheel_centers_local.append(np.array(center))
         center1 = center + y_shift
         center2 = center - y_shift
         # points on circles
@@ -110,58 +110,7 @@ class Car:
         z2 = center2[2] + r * np.sin(t)
         self.wheel_curves_local.append([np.array([x1, y1, z1]), np.array([x2, y2, z2])])
 
-        # # points on the lines representing whe width
-        # points1 = np.array([[center1[0], center1[1], center1[2] + r],
-        #                     [center1[0], center1[1], center1[2] - r],
-        #                     [center1[0] + r, center1[1], center1[2]],
-        #                     [center1[0] - r, center1[1], center1[2]]]).T
-        # points2 = np.array([[center2[0], center2[1], center2[2] + r],
-        #                     [center2[0], center2[1], center2[2] - r],
-        #                     [center2[0] + r, center2[1], center2[2]],
-        #                     [center2[0] - r, center2[1], center2[2]]]).T
-        # self.wheel_lines_local.append([points1, points2])
-
-    def update(self):
-        """
-        Capture car moving from keyboard input and move the T matrices for car and wheels.
-        Y-axis was flipped, so anticlockwise becomes negative and clockwise becomes positive.
-        """
-
-        if self.turning_left or self.turning_right:
-            speed = self.settings.speed_during_steering
-        else:
-            speed = self.settings.car_speed_factor
-
-        if self.accelerate:
-            speed *= 2
-
-        if self.moving_fwd:
-            if self.turning_left:  # anticlockwise around z
-                self.car_orientation -= self.settings.car_turning_speed
-            if self.turning_right:  # clockwise around z
-                self.car_orientation += self.settings.car_turning_speed
-
-            self.car_origin3d[0] += speed * np.cos(self.car_orientation)  # x
-            self.car_origin3d[1] += speed * np.sin(self.car_orientation)  # y
-        if self.moving_bwd:
-            if self.turning_left:  # clockwise around z
-                self.car_orientation += self.settings.car_turning_speed
-            if self.turning_right:  # anticlockwise around z
-                self.car_orientation -= self.settings.car_turning_speed
-
-            self.car_origin3d[0] -= speed * np.cos(self.car_orientation)  # x
-            self.car_origin3d[1] -= speed * np.sin(self.car_orientation)  # y
-
-        R = gf.rotation(self.car_orientation, 'z')
-        car_origin = np.hstack([self.car_origin3d, 1])  # generalised form
-        self.T_body = gf.add_translation(R, car_origin)
-        self.T_wheels = [gf.add_translation(R, car_origin) for i in range(4)]
-        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-
-        self.apply_transformations()
-        self.wheel_rotating()
-
-    def wheel_rotating(self):
+    def wheel_rotating_animation(self):
         wheel_line_interval = int(20/4)
         if self.moving_fwd or self.moving_bwd:
             # update wheel lines
@@ -189,7 +138,26 @@ class Car:
 
             self.wheel_lines.append([points1, points2])
 
+    def update_trans_mat(self):
+        R = gf.rotation(self.car_orientation, 'z')
+        car_origin = np.hstack([self.car_origin3d, 1])  # generalised form
+        self.T_body = gf.add_translation(R, car_origin)
+        for i in range(4):
+            # T_1: wheel frame (rotation)
+            # T_2: wheel frame to car frame (translation)
+            # T_body: car frame to global frame
+            R = gf.rotation(self.wheels_orientation[i], 'z')  # clockwise is positive
+            T_1 = gf.add_translation(R)
+
+            T_2 = gf.add_translation(np.eye(3), -self.wheel_centers_local[i])
+            T_CW = np.matmul(T_2, T_1)
+            self.T_wheels[i] = np.matmul(self.T_body, T_CW)
+
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
+
     def apply_transformations(self):
+        self.update_trans_mat()
+
         self.body_lines = []
         self.wheel_curves = []
 
@@ -203,15 +171,55 @@ class Car:
         # apply transformation matrix T to each wheel line segment
         for i in range(4):
             # wheel curves
-            curve1 = self.wheel_curves_local[i][0]
-            curve2 = self.wheel_curves_local[i][1]
+            # all points in wheel frame
+            curve1 = self.wheel_curves_local[i][0] - self.wheel_centers_local[i].reshape(3, 1)
+            curve2 = self.wheel_curves_local[i][1] - self.wheel_centers_local[i].reshape(3, 1)
             curve1 = np.vstack([curve1, np.ones(curve1.shape[1])])
             curve2 = np.vstack([curve2, np.ones(curve2.shape[1])])
             curve1_universe = np.matmul(self.T_wheels[i], curve1).astype('float')
             curve2_universe = np.matmul(self.T_wheels[i], curve2).astype('float')
             self.wheel_curves.append([curve1_universe[:3, :].T, curve2_universe[:3, :].T])
 
+
+    def update(self):
+        """
+        Capture car moving from keyboard input and move the T matrices for car and wheels.
+        Y-axis was flipped, so anticlockwise becomes negative and clockwise becomes positive.
+        """
+
+        if self.turning_left or self.turning_right:
+            speed = self.settings.speed_during_steering
+        else:
+            speed = self.settings.car_speed_factor
+
+        if self.accelerate:
+            speed *= 2
+
+        if self.moving_fwd:
+            if self.turning_left:  # anticlockwise around z
+                self.car_orientation -= self.settings.car_turning_speed
+                self.wheels_orientation = self.wheels_orientation - 0.1
+            if self.turning_right:  # clockwise around z
+                self.car_orientation += self.settings.car_turning_speed
+                self.wheels_orientation = self.wheels_orientation + 0.1
+
+            self.car_origin3d[0] += speed * np.cos(self.car_orientation)  # x
+            self.car_origin3d[1] += speed * np.sin(self.car_orientation)  # y
+        if self.moving_bwd:
+            if self.turning_left:  # clockwise around z
+                self.car_orientation += self.settings.car_turning_speed
+                self.wheels_orientation = self.wheels_orientation + 0.1
+            if self.turning_right:  # anticlockwise around z
+                self.car_orientation -= self.settings.car_turning_speed
+                self.wheels_orientation = self.wheels_orientation - 0.1
+
+            self.car_origin3d[0] -= speed * np.cos(self.car_orientation)  # x
+            self.car_origin3d[1] -= speed * np.sin(self.car_orientation)  # y
+
+        self.apply_transformations()
+
     def draw(self):
+        self.wheel_rotating_animation()
         for line in self.body_lines:
             gf.draw_line(self.screen, line, R=self.R_view,
                          offset=self.offset)
@@ -270,4 +278,4 @@ class LargeCar(Car):
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
 
         self.apply_transformations()
-        self.wheel_rotating()
+        # self.wheel_rotating()

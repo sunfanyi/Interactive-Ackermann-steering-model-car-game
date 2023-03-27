@@ -56,7 +56,6 @@ class Workspace:
         pad[self.pad_size:self.pad_size + img.shape[0],
             self.pad_size:self.pad_size + img.shape[1]] = img
         self.map2d = pad
-        # self.map2d = gf.cv2_to_pygame(pad)
 
     def draw(self):
         self.draw_map()
