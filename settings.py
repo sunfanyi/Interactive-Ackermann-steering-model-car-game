@@ -36,6 +36,8 @@ class Settings:
                             'centery': 10 + radius,
                             '3d': False,
                             'car_fixed': True,
+                            # '3d': True,
+                            # 'car_fixed': False,
                             'edge': True}
 
         self.initialize_dynamic_settings()

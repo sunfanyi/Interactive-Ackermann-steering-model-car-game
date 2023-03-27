@@ -58,9 +58,6 @@ class Workspace:
         self.map2d = pad
         # self.map2d = gf.cv2_to_pygame(pad)
 
-
-
-
     def draw(self):
         self.draw_map()
         self.draw_axes()
@@ -127,8 +124,8 @@ class Workspace:
         res = cropped.copy()
         res[black_pixels] = [255, 255, 255]
 
-        # res = gf.cv2_to_pygame(res)
-        res = np.fliplr(res)
+        if not self.settings.zoom_region['3d']:
+            res = np.fliplr(res)
 
         # Create surface
         zoomed_map_surface = pygame.Surface((window_w, window_h))
@@ -139,8 +136,13 @@ class Workspace:
             pygame.draw.circle(zoomed_map_surface, (50, 50, 50), (xc, yc), radius, 3)
 
         # Rotate zoomed-in map surface as car steering
-        aligned_surface = pygame.transform.rotate(zoomed_map_surface,
-                                      self.car.car_orientation*180/np.pi + calibration_angle)
+
+        if self.settings.zoom_region['car_fixed']:
+            aligned_surface = pygame.transform.rotate(zoomed_map_surface,
+                                          self.car.car_orientation*180/np.pi + calibration_angle)
+        else:
+            aligned_surface = zoomed_map_surface
+
         rotated_center = aligned_surface.get_rect().center
         # rotation will change the surface center as the surface is fixed at top left corner
         aligned_topleft = (topleft[0] - (rotated_center[0] - original_center[0]),

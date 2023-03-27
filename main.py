@@ -27,7 +27,7 @@ def run_game():
     workspace = Workspace(settings, screen, my_car)
     i = 0
     while True:
-        gf.check_event(my_car)
+        gf.check_event(my_car, my_large_car)
 
         my_car.update()
 
