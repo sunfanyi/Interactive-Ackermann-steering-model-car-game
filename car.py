@@ -170,12 +170,10 @@ class Car:
 
 
 class LargeCar(Car):
-    def __init__(self, screen, settings, scale=80):
-        super().__init__(screen, settings, scale)
+    def __init__(self, settings, screen, scale=40):
+        zoomed_scale = scale * settings.zoom_region['factor']
+        super().__init__(settings, screen, zoomed_scale)
         self.car_origin = np.array([0, 0, 0])
-        # a = gf.point_2d_to_3d(10, 10, 10)
-        # print(a)
-        # print(gf.point_3d_to_2d(*a))
 
     def update_mat(self, car_orientation, wheels_orientation):
         self.car_orientation = car_orientation
@@ -188,9 +186,11 @@ class LargeCar(Car):
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin)
 
     def draw(self):
+        centerx = self.settings.zoom_region['centerx']
+        centery = self.settings.zoom_region['centery']
         self.apply_transformations()
         for line in self.body_lines:
-            gf.draw_line(self.screen, line, offset=(700, 100))
+            gf.draw_line(self.screen, line, offset=(centerx, centery))
         for i in range(4):  # four wheels
             # each wheel has two line segments
             line1 = self.wheel_lines[i][0]
@@ -198,8 +198,10 @@ class LargeCar(Car):
             for j in range(len(line1)-1):  # iterate through points
                 point1 = line1[j]
                 point2 = line1[j+1]
-                gf.draw_line(self.screen, [point1, point2], (255, 0, 0), offset=(700, 100))
+                gf.draw_line(self.screen, [point1, point2], (255, 0, 0),
+                             offset=(centerx, centery))
 
                 point1 = line2[j]
                 point2 = line2[j+1]
-                gf.draw_line(self.screen, [point1, point2], (255, 0, 0), offset=(700, 100))
+                gf.draw_line(self.screen, [point1, point2], (255, 0, 0),
+                             offset=(centerx, centery))

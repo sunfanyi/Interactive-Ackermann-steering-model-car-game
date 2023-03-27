@@ -32,9 +32,11 @@ class Settings:
         self.z_tick_interval = 500  # tick label interval for Z-axes
 
         # zoom in region:
+        radius = 100
         self.zoom_region = {'factor': 2,
-                            'window_width': 300,
-                            'window_height': 200,
+                            'radius': radius,
+                            'centerx': self.screen_width - 10 - radius,
+                            'centery': 10 + radius,
                             'edge': True}
 
 

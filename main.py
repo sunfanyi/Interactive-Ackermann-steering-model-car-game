@@ -21,6 +21,7 @@ def run_game():
     pygame.display.set_caption('Mobile Robot')
 
     my_car = Car(settings, screen)
+
     my_large_car = LargeCar(settings, screen)
     workspace = Workspace(settings, screen, my_car)
     i = 0

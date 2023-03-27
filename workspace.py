@@ -59,47 +59,68 @@ class Workspace:
         map_surface = pygame.surfarray.make_surface(self.map_img2d)
         merged_surface.blit(map_surface, (0, 0))
 
-        # for the zoomed in map:
-        window_w = self.settings.zoom_region['window_width']
-        window_h = self.settings.zoom_region['window_height']
+        # For the zoomed in map:
+        img = self.map_img2d.astype(np.uint8)
+
         zoom_factor = self.settings.zoom_region['factor']
-        crop_size_w = window_w / zoom_factor / 2
-        crop_size_h = window_h / zoom_factor / 2
+        radius = self.settings.zoom_region['radius']
+        centerx = self.settings.zoom_region['centerx']
+        centery = self.settings.zoom_region['centery']
+        window_w = radius * 2
+        window_h = radius * 2
 
-        zoomed_map_surface = pygame.Surface((window_w+2, window_h+2))
+        # Pre-crop: (Rectangular)
+        crop_size_w = radius / zoom_factor
+        crop_size_h = radius / zoom_factor
+        topleft = (centerx - radius, centery - radius)
 
-        # Crop:
         start_row = int(self.car.car_origin2d[0] - crop_size_w)
         start_col = int(self.car.car_origin2d[1] - crop_size_h)
         end_row = int(self.car.car_origin2d[0] + crop_size_w)
         end_col = int(self.car.car_origin2d[1] + crop_size_h)
-        cropped = self.map_img2d[start_row:end_row, start_col:end_col]
+        pre_cropped = img[start_row:end_row, start_col:end_col]
 
         # Resize
-        scaled = cv2.resize(cropped, None, fx=zoom_factor, fy=zoom_factor,
+        scaled = cv2.resize(pre_cropped, None, fx=zoom_factor, fy=zoom_factor,
                             interpolation=cv2.INTER_CUBIC)
-
-        # Embed cropped window
-        leftx = self.settings.screen_width - window_w - 2
-        rightx = self.settings.screen_width
-        topy = 0
-        boty = window_h + 2
 
         # pad to avoid index error caused by floating rounding
         padded = np.ones((window_w+2, window_h+2, 3)) * 255
         padded[:scaled.shape[0], :scaled.shape[1], :] = scaled
-        pygame.surfarray.blit_array(zoomed_map_surface, padded)
+
+        padded = padded.astype(np.uint8)
+
+        # Circular crop
+        xc = padded.shape[0] // 2
+        yc = padded.shape[1] // 2
+        mask = np.zeros_like(padded, dtype=np.uint8)
+        mask = cv2.circle(mask, (xc, yc), radius, (255, 255, 255), -1)
+
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+        cropped = cv2.bitwise_and(padded, padded, mask=mask)
+
+        gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+        black_pixels = np.where(gray == 0)
+        res = cropped.copy()
+        res[black_pixels] = [255, 255, 255]
+
+        # Create surface
+        zoomed_map_surface = pygame.Surface((window_w+2, window_h+2))
+        pygame.surfarray.blit_array(zoomed_map_surface, res)
 
         # aligned = pygame.transform.rotate(zoomed_map_surface, 90)
+        #
+        # # # aligned = pygame.transform.rotate(self.map_img2d, 1)
 
-        # # aligned = pygame.transform.rotate(self.map_img2d, 1)
-        merged_surface.blit(zoomed_map_surface, (leftx, topy))
+        merged_surface.blit(zoomed_map_surface, topleft)
+
         self.screen.blit(merged_surface, (0, 0))
 
-        pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (rightx, topy), 2)
-        pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (leftx, boty), 2)
-        pygame.draw.line(self.screen, (0, 0, 0), (rightx, topy), (rightx, boty), 2)
-        pygame.draw.line(self.screen, (0, 0, 0), (leftx, boty), (rightx, boty), 2)
+        # pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (rightx, topy), 2)
+        # pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (leftx, boty), 2)
+        # pygame.draw.line(self.screen, (0, 0, 0), (rightx, topy), (rightx, boty), 2)
+        # pygame.draw.line(self.screen, (0, 0, 0), (leftx, boty), (rightx, boty), 2)
 
     def draw_axes(self):
         origin3d = self.settings.origin3d
