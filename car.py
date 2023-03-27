@@ -176,7 +176,10 @@ class LargeCar(Car):
         self.car_origin = np.array([0, 0, 0])
 
     def update_mat(self, car_orientation, wheels_orientation):
-        self.car_orientation = car_orientation
+        if self.settings.zoom_region['car_fixed']:
+            self.car_orientation = np.pi/2
+        else:
+            self.car_orientation = car_orientation
         self.wheels_orientation = wheels_orientation
 
         R = gf.rotation(self.car_orientation, 'z')

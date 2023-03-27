@@ -37,6 +37,7 @@ class Settings:
                             'radius': radius,
                             'centerx': self.screen_width - 10 - radius,
                             'centery': 10 + radius,
+                            'car_fixed': True,
                             'edge': True}
 
 

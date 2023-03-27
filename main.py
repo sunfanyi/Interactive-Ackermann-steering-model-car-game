@@ -29,7 +29,6 @@ def run_game():
         gf.check_event(my_car)
 
         my_car.update()
-        my_large_car.update_mat(my_car.car_orientation, my_car.wheels_orientation)
 
         gf.update_screen(settings, screen, workspace, my_car, my_large_car, i)
         i += 1

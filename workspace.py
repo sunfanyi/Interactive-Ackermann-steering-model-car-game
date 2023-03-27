@@ -66,8 +66,8 @@ class Workspace:
         radius = self.settings.zoom_region['radius']
         centerx = self.settings.zoom_region['centerx']
         centery = self.settings.zoom_region['centery']
-        window_w = radius * 2
-        window_h = radius * 2
+        window_w = radius * 2 + 2
+        window_h = radius * 2 + 2
 
         # Pre-crop: (Rectangular)
         crop_size_w = radius / zoom_factor
@@ -85,7 +85,7 @@ class Workspace:
                             interpolation=cv2.INTER_CUBIC)
 
         # pad to avoid index error caused by floating rounding
-        padded = np.ones((window_w+2, window_h+2, 3)) * 255
+        padded = np.ones((window_w, window_h, 3)) * 255
         padded[:scaled.shape[0], :scaled.shape[1], :] = scaled
 
         padded = padded.astype(np.uint8)
@@ -106,21 +106,24 @@ class Workspace:
         res[black_pixels] = [255, 255, 255]
 
         # Create surface
-        zoomed_map_surface = pygame.Surface((window_w+2, window_h+2))
+        zoomed_map_surface = pygame.Surface((window_w, window_h))
         pygame.surfarray.blit_array(zoomed_map_surface, res)
+        original_center = zoomed_map_surface.get_rect().center
 
-        # aligned = pygame.transform.rotate(zoomed_map_surface, 90)
-        #
-        # # # aligned = pygame.transform.rotate(self.map_img2d, 1)
+        if self.settings.zoom_region['edge']:
+            pygame.draw.circle(zoomed_map_surface, (50, 50, 50), (xc, yc), radius, 3)
 
-        merged_surface.blit(zoomed_map_surface, topleft)
+        # Rotate zoomed-in map surface as car steering
+        aligned_surface = pygame.transform.rotate(zoomed_map_surface,
+                                                  self.car.car_orientation*180/np.pi + 90)
+        rotated_center = aligned_surface.get_rect().center
+        # rotation will change the surface center as the surface is fixed at top left corner
+        aligned_topleft = (topleft[0] - (rotated_center[0] - original_center[0]),
+                           topleft[1] - (rotated_center[1] - original_center[1]))
+
+        merged_surface.blit(aligned_surface, aligned_topleft)
 
         self.screen.blit(merged_surface, (0, 0))
-
-        # pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (rightx, topy), 2)
-        # pygame.draw.line(self.screen, (0, 0, 0), (leftx, topy), (leftx, boty), 2)
-        # pygame.draw.line(self.screen, (0, 0, 0), (rightx, topy), (rightx, boty), 2)
-        # pygame.draw.line(self.screen, (0, 0, 0), (leftx, boty), (rightx, boty), 2)
 
     def draw_axes(self):
         origin3d = self.settings.origin3d

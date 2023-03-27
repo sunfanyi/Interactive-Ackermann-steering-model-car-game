@@ -69,6 +69,7 @@ def update_screen(settings, screen, workspace, car, large_car, i):
 
     workspace.draw()
     car.draw()
+    large_car.update_mat(car.car_orientation, car.wheels_orientation)
     large_car.draw()
     # zoomed_screen = pygame.transform.smoothscale(screen, (800-i, 600-i))
     # screen.blit(zoomed_screen, ((800-i)//2, (600-i)//2))
