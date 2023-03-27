@@ -12,6 +12,7 @@ import game_function as gf
 from workspace import Workspace
 from car import Car, LargeCar
 from settings import Settings
+from button import Button
 
 
 def run_game():
@@ -25,13 +26,18 @@ def run_game():
 
     my_large_car = LargeCar(settings, screen)
     workspace = Workspace(settings, screen, my_car)
+    zoom_buttons = [Button(settings, screen, label)
+                    for label in ['+', '-', 'R']]
+
     i = 0
     while True:
-        gf.check_event(my_car, my_large_car)
+        gf.check_event(settings, my_car, my_large_car, zoom_buttons)
 
         my_car.update()
 
-        gf.update_screen(settings, screen, workspace, my_car, my_large_car, i)
+        my_large_car.update_zoomed_map(my_car.car_orientation,
+                                       my_car.wheels_orientation)
+        gf.update_screen(settings, screen, workspace, my_car, my_large_car, zoom_buttons, i)
         i += 1
         # print('next')
         # time.sleep(0.1)

@@ -28,6 +28,21 @@ class Settings:
         self.y_tick_interval = 500  # tick label interval for Y-axes
         self.z_tick_interval = 500  # tick label interval for Z-axes
 
+        self.initialise_dynamic_settings()
+        self.initialise_zoom_settings()
+
+    def initialise_dynamic_settings(self):
+        # Scaling factors for plotting:
+        # for x: 800 = screen length, 5000 = image length, 2 = scale factor (reduce to make larger)
+        self.x_factor = 800/5000/1.6
+        self.y_factor = 600/3600/1.2
+        self.z_factor = 0.1
+
+        self.car_speed_factor = 5
+        self.speed_during_steering = self.car_speed_factor / 2
+        self.car_turning_speed = 0.7/180*np.pi
+
+    def initialise_zoom_settings(self):
         # zoom in region:
         radius = 100
         self.zoom_region = {'factor': 2,
@@ -39,20 +54,6 @@ class Settings:
                             # '3d': True,
                             # 'car_fixed': False,
                             'edge': True}
-
-        self.initialize_dynamic_settings()
-
-    def initialize_dynamic_settings(self):
-        # Scaling factors for plotting:
-        # for x: 800 = screen length, 5000 = image length, 2 = scale factor (reduce to make larger)
-        self.x_factor = 800/5000/1.6
-        self.y_factor = 600/3600/1.2
-        self.z_factor = 0.1
-
-        self.car_speed_factor = 5
-        self.speed_during_steering = self.car_speed_factor / 2
-        self.car_turning_speed = 0.7/180*np.pi
-
 
     # def zoom_in(self):
     #     # self.zoom_factor += 0.001

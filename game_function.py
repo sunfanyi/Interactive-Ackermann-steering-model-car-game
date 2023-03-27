@@ -18,7 +18,7 @@ z_factor = my_settings.z_factor
 origin2d = my_settings.origin2d
 
 
-def check_event(car, large_car):
+def check_event(settings, car, large_car, zoom_buttons):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -27,6 +27,31 @@ def check_event(car, large_car):
             check_keydown_event(event, car, large_car)
         elif event.type == pygame.KEYUP:
             check_keyup_event(event, car, large_car)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            check_mouse_click_event(settings, large_car,
+                                    zoom_buttons, mouse_x, mouse_y)
+
+
+def check_mouse_click_event(settings, large_car,
+                            zoom_buttons, mouse_x, mouse_y):
+    button_zoom_in, button_zoom_out, button_reset = zoom_buttons
+    zoom_in_click = button_zoom_in.rect.collidepoint(mouse_x, mouse_y)
+    zoom_out_click = button_zoom_out.rect.collidepoint(mouse_x, mouse_y)
+    reset_click = button_reset.rect.collidepoint(mouse_x, mouse_y)
+
+    if zoom_in_click:
+        settings.zoom_region['factor'] *= 1.1
+        large_car.scale *= 1.1
+        large_car.reset_dimensions()
+    if zoom_out_click:
+        settings.zoom_region['factor'] /= 1.1
+        large_car.scale /= 1.1
+        large_car.reset_dimensions()
+    if reset_click:
+        settings.initialise_zoom_settings()
+        large_car.scale = settings.zoom_region['factor'] * 40
+        large_car.reset_dimensions()
 
 
 def check_keydown_event(event, car, large_car):
@@ -69,7 +94,7 @@ def check_car_moving(event, car, large_car):
         large_car.accelerate = True
 
 
-def update_screen(settings, screen, workspace, car, large_car, i):
+def update_screen(settings, screen, workspace, car, large_car, zoom_buttons, i):
     # global x_factor
     # global y_factor
     # global z_factor
@@ -83,10 +108,12 @@ def update_screen(settings, screen, workspace, car, large_car, i):
 
     workspace.draw()
     car.draw()
-    large_car.update_mat(car.car_orientation, car.wheels_orientation)
     large_car.draw()
     # zoomed_screen = pygame.transform.smoothscale(screen, (800-i, 600-i))
     # screen.blit(zoomed_screen, ((800-i)//2, (600-i)//2))
+
+    for button in zoom_buttons:
+        button.draw_button()
 
     pygame.display.flip()
 

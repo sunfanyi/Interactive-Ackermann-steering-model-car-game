@@ -15,17 +15,11 @@ class Car:
     def __init__(self, settings, screen, scale=40):
         self.settings = settings
         self.screen = screen
+        self.scale = scale
 
-        self.length = 3.6 * scale
-        self.width = 2.6 * scale
-        self.height = 1.5 * scale
-        self.wheel_radius = 0.6 * scale
-        self.wheel_width = 0.5 * scale
-        self.wheel_offset = 0.2 * scale
-        self.wheel_base = 2 * scale
+        self.reset_dimensions()
 
-        self.get_body_lines()
-        self.get_wheel_lines()
+        # indicator of how many cycles the wheels have turned
         self.wheel_phi_counter = 0
 
         # Transform matrices
@@ -38,14 +32,28 @@ class Car:
         self.car_orientation = 0  # in radians
         self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
 
+        # View
         self.R_view = gf.trimetric_view()
         self.offset = self.settings.origin2d
 
+        # Car control
         self.moving_fwd = False
         self.moving_bwd = False
         self.turning_left = False
         self.turning_right = False
         self.accelerate = False
+
+    def reset_dimensions(self):
+        self.length = 3.6 * self.scale
+        self.width = 2.6 * self.scale
+        self.height = 1.5 * self.scale
+        self.wheel_radius = 0.6 * self.scale
+        self.wheel_width = 0.5 * self.scale
+        self.wheel_offset = 0.2 * self.scale
+        self.wheel_base = 2 * self.scale
+
+        self.get_body_lines()
+        self.get_wheel_lines()
 
     def get_body_lines(self):
         """
@@ -87,30 +95,39 @@ class Car:
         z_shift = np.array([0, 0, -self.wheel_offset])
 
         self.wheel_curves_local = []
-        self.wheel_lines_local = []
-        self.wheel_centers_local = []
-        self.get_each_wheel(self.top_front_left - x_shift + z_shift, y_shift)
-        self.get_each_wheel(self.top_front_right - x_shift + z_shift, y_shift)
-        self.get_each_wheel(self.top_rear_left + x_shift + z_shift, y_shift)
-        self.get_each_wheel(self.top_rear_right + x_shift + z_shift, y_shift)
+        self.wheel_centers_local = np.array([self.top_front_left - x_shift + z_shift,
+                                             self.top_front_right - x_shift + z_shift,
+                                             self.top_rear_left + x_shift + z_shift,
+                                             self.top_rear_right + x_shift + z_shift])
 
-    def get_each_wheel(self, center, y_shift, num_points=20):
-        r = self.wheel_radius
+        def get_each_wheel(center, y_shift, num_points=20):
+            r = self.wheel_radius
 
-        self.wheel_centers_local.append(np.array(center))
-        center1 = center + y_shift
-        center2 = center - y_shift
-        # points on circles
-        t = np.linspace(0, 2 * np.pi, num_points)
-        x1 = center1[0] + r * np.cos(t)
-        y1 = center1[1] * np.ones_like(t)
-        z1 = center1[2] + r * np.sin(t)
-        x2 = center2[0] + r * np.cos(t)
-        y2 = center2[1] * np.ones_like(t)
-        z2 = center2[2] + r * np.sin(t)
-        self.wheel_curves_local.append([np.array([x1, y1, z1]), np.array([x2, y2, z2])])
+            center1 = center + y_shift
+            center2 = center - y_shift
+            # points on circles
+            t = np.linspace(0, 2 * np.pi, num_points)
+            x1 = center1[0] + r * np.cos(t)
+            y1 = center1[1] * np.ones_like(t)
+            z1 = center1[2] + r * np.sin(t)
+            x2 = center2[0] + r * np.cos(t)
+            y2 = center2[1] * np.ones_like(t)
+            z2 = center2[2] + r * np.sin(t)
+            self.wheel_curves_local.append([np.array([x1, y1, z1]), np.array([x2, y2, z2])])
+
+        get_each_wheel(self.wheel_centers_local[0], y_shift)
+        get_each_wheel(self.wheel_centers_local[1], y_shift)
+        get_each_wheel(self.wheel_centers_local[2], y_shift)
+        get_each_wheel(self.wheel_centers_local[3], y_shift)
+
 
     def wheel_rotating_animation(self):
+        """
+        Drawing lines from wheels curves, in the direction of wheel width,
+        to simulate rotating wheels.
+        Each wheel has two curves, each curve has 20 points.
+        Take 4 points from each curve, and draw lines between them.
+        """
         wheel_line_interval = int(20/4)
         if self.moving_fwd or self.moving_bwd:
             # update wheel lines
@@ -139,13 +156,15 @@ class Car:
             self.wheel_lines.append([points1, points2])
 
     def update_trans_mat(self):
+        """
+        For each wheel:
+            T_1: wheel frame (rotation)
+            T_2: wheel frame to car frame (translation)
+            T_body: car frame to global frame
+        """
         R = gf.rotation(self.car_orientation, 'z')
-        car_origin = np.hstack([self.car_origin3d, 1])  # generalised form
-        self.T_body = gf.add_translation(R, car_origin)
+        self.T_body = gf.add_translation(R, self.car_origin3d)
         for i in range(4):
-            # T_1: wheel frame (rotation)
-            # T_2: wheel frame to car frame (translation)
-            # T_body: car frame to global frame
             R = gf.rotation(self.wheels_orientation[i], 'z')  # clockwise is positive
             T_1 = gf.add_translation(R)
 
@@ -168,10 +187,9 @@ class Car:
             line_universe = np.matmul(self.T_body, line)  # [4, 2], 4=[x, y, z, 1], 2=[p1, p2]
             self.body_lines.append(line_universe[:3, :].T)
 
-        # apply transformation matrix T to each wheel line segment
+        # apply transformation matrix T to each wheel curve
         for i in range(4):
-            # wheel curves
-            # all points in wheel frame
+            # all points shoule be in wheel frame
             curve1 = self.wheel_curves_local[i][0] - self.wheel_centers_local[i].reshape(3, 1)
             curve2 = self.wheel_curves_local[i][1] - self.wheel_centers_local[i].reshape(3, 1)
             curve1 = np.vstack([curve1, np.ones(curve1.shape[1])])
@@ -179,7 +197,6 @@ class Car:
             curve1_universe = np.matmul(self.T_wheels[i], curve1).astype('float')
             curve2_universe = np.matmul(self.T_wheels[i], curve2).astype('float')
             self.wheel_curves.append([curve1_universe[:3, :].T, curve2_universe[:3, :].T])
-
 
     def update(self):
         """
@@ -264,18 +281,11 @@ class LargeCar(Car):
         centery = self.settings.zoom_region['centery']
         self.offset = (centerx, centery)
 
-    def update_mat(self, car_orientation, wheels_orientation):
+    def update_zoomed_map(self, car_orientation, wheels_orientation):
         if self.settings.zoom_region['car_fixed']:
             self.car_orientation = np.pi/2
         else:
             self.car_orientation = car_orientation
         self.wheels_orientation = wheels_orientation
 
-        R = gf.rotation(self.car_orientation, 'z')
-        car_origin = np.hstack([self.car_origin3d, 1])  # generalised form
-        self.T_body = gf.add_translation(R, car_origin)
-        self.T_wheels = [gf.add_translation(R, car_origin) for i in range(4)]
-        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-
         self.apply_transformations()
-        # self.wheel_rotating()
