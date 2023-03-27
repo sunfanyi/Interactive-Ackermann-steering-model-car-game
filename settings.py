@@ -15,9 +15,6 @@ class Settings:
         self.screen_width = 800
         self.screen_height = 600
 
-        self.car_speed_factor = 10
-        self.car_turning_speed = 4/180*np.pi
-
         # axes settings:
         self.xlim = 5224
         self.ylim = 3680
@@ -41,7 +38,6 @@ class Settings:
                             'car_fixed': True,
                             'edge': True}
 
-
         self.initialize_dynamic_settings()
 
     def initialize_dynamic_settings(self):
@@ -50,6 +46,10 @@ class Settings:
         self.x_factor = 800/5000/1.6
         self.y_factor = 600/3600/1.2
         self.z_factor = 0.1
+
+        self.car_speed_factor = 5
+        self.speed_during_steering = self.car_speed_factor / 2
+        self.car_turning_speed = 0.7/180*np.pi
 
 
     # def zoom_in(self):

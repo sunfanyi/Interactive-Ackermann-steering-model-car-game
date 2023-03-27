@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import pygame
+import time
 
 import game_function as gf
 from workspace import Workspace
@@ -33,6 +34,7 @@ def run_game():
         gf.update_screen(settings, screen, workspace, my_car, my_large_car, i)
         i += 1
         # print('next')
+        # time.sleep(0.1)
 
 run_game()
 

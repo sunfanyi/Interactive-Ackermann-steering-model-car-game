@@ -15,13 +15,13 @@ class Car:
         self.settings = settings
         self.screen = screen
 
-        self.length = 5 * scale
+        self.length = 4 * scale
         self.width = 2 * scale
         self.height = 1.5 * scale
-        self.wheel_radius = 0.5 * scale
-        self.wheel_width = 0.3 * scale
+        self.wheel_radius = 0.6 * scale
+        self.wheel_width = 0.5 * scale
         self.wheel_offset = 0.2 * scale
-        self.wheel_base = 3 * scale
+        self.wheel_base = 2.5 * scale
 
         self.get_body_lines()
         self.get_wheel_lines()
@@ -31,7 +31,7 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # Used to update transform matrices
-        self.car_origin3d = np.array([0, 0, 0])  # generalised coordinates
+        self.car_origin3d = np.array([0., 0., 0.])  # generalised coordinates
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
         self.car_orientation = 0  # in radians
         self.wheels_orientation = [0, 0, 0, 0]  # in radians
@@ -40,6 +40,7 @@ class Car:
         self.moving_bwd = False
         self.turning_left = False
         self.turning_right = False
+        self.accelerate = False
 
     def get_body_lines(self):
         """
@@ -107,22 +108,31 @@ class Car:
         Capture car moving from keyboard input and move the T matrices for car and wheels.
         Y-axis was flipped, so anticlockwise becomes negative and clockwise becomes positive.
         """
+
+        if self.turning_left or self.turning_right:
+            speed = self.settings.speed_during_steering
+        else:
+            speed = self.settings.car_speed_factor
+
+        if self.accelerate:
+            speed *= 2
+
         if self.moving_fwd:
             if self.turning_left:  # anticlockwise around z
                 self.car_orientation -= self.settings.car_turning_speed
             if self.turning_right:  # clockwise around z
                 self.car_orientation += self.settings.car_turning_speed
 
-            self.car_origin3d[0] += self.settings.car_speed_factor * np.cos(self.car_orientation)  # x
-            self.car_origin3d[1] += self.settings.car_speed_factor * np.sin(self.car_orientation)  # y
+            self.car_origin3d[0] += speed * np.cos(self.car_orientation)  # x
+            self.car_origin3d[1] += speed * np.sin(self.car_orientation)  # y
         if self.moving_bwd:
             if self.turning_left:  # clockwise around z
                 self.car_orientation += self.settings.car_turning_speed
             if self.turning_right:  # anticlockwise around z
                 self.car_orientation -= self.settings.car_turning_speed
 
-            self.car_origin3d[0] -= self.settings.car_speed_factor * np.cos(self.car_orientation)  # x
-            self.car_origin3d[1] -= self.settings.car_speed_factor * np.sin(self.car_orientation)  # y
+            self.car_origin3d[0] -= speed * np.cos(self.car_orientation)  # x
+            self.car_origin3d[1] -= speed * np.sin(self.car_orientation)  # y
 
         R = gf.rotation(self.car_orientation, 'z')
         car_origin = np.hstack([self.car_origin3d, 1])  # generalised form
@@ -189,11 +199,12 @@ class LargeCar(Car):
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
 
     def draw(self):
+        R = np.eye(3)
         centerx = self.settings.zoom_region['centerx']
         centery = self.settings.zoom_region['centery']
         self.apply_transformations()
         for line in self.body_lines:
-            draw_line(self.screen, line, offset=(centerx, centery))
+            gf.draw_line(self.screen, line, R=R, offset=(centerx, centery))
         for i in range(4):  # four wheels
             # each wheel has two line segments
             line1 = self.wheel_lines[i][0]
@@ -201,62 +212,12 @@ class LargeCar(Car):
             for j in range(len(line1)-1):  # iterate through points
                 point1 = line1[j]
                 point2 = line1[j+1]
-                draw_line(self.screen, [point1, point2], (255, 0, 0),
+                gf.draw_line(self.screen, [point1, point2], (255, 0, 0), R=R,
                              offset=(centerx, centery))
 
                 point1 = line2[j]
                 point2 = line2[j+1]
-                draw_line(self.screen, [point1, point2], (255, 0, 0),
+                gf.draw_line(self.screen, [point1, point2], (255, 0, 0), R=R,
                              offset=(centerx, centery))
 
 
-
-
-import pygame
-def draw_line(screen, line, color=(0, 0, 0), linewidth=1, offset=(0,0)):
-    p1 = line[0]
-    p2 = line[1]
-
-    p1_2d = point_3d_to_2d(p1[0], p1[1], p1[2], offset)
-    p2_2d = point_3d_to_2d(p2[0], p2[1], p2[2], offset)
-
-    pygame.draw.line(screen, color, p1_2d, p2_2d, linewidth)
-
-    return p1_2d, p2_2d
-
-
-def point_3d_to_2d(x, y, z, offset):
-    # flip y-axis for visualisation,
-    # so anticlockwise becomes negative and clockwise becomes positive
-    y = - y
-    x *= 800/5000/1.6
-    y *= 600/3600/1.2
-    z *= 0.1
-
-    # Trimetric projection fron 3d to 2d
-    x_rotation = rotation(0/180 * np.pi, 'x')
-    z_rotation = rotation(0/180 * np.pi, 'z')
-
-    R = np.matmul(x_rotation, z_rotation)
-
-    x_2d, y_2d, z_2d = np.matmul(R, np.array([x, y, z]))
-
-    x_2d, y_2d = (offset[0] + x_2d, offset[1] - y_2d)
-
-    return x_2d, y_2d
-
-
-def rotation(theta, direction):
-    if direction == 'x':
-        R = np.array([[1, 0, 0],
-                      [0, np.cos(theta), -np.sin(theta)],
-                      [0, np.sin(theta), np.cos(theta)]])
-    elif direction == 'y':
-        R = np.array([[np.cos(theta), 0, np.sin(theta)],
-                      [0, 1, 0],
-                      [-np.sin(theta), 0, np.cos(theta)]])
-    elif direction == 'z':
-        R = np.array([[np.cos(theta), -np.sin(theta), 0],
-                      [np.sin(theta), np.cos(theta), 0],
-                      [0, 0, 1]])
-    return R
