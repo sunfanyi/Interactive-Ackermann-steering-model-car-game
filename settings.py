@@ -15,8 +15,8 @@ class Settings:
         self.screen_width = 800
         self.screen_height = 600
 
-        self.car_speed_factor = 15
-        self.car_turning_speed = 2/180*np.pi
+        self.car_speed_factor = 10
+        self.car_turning_speed = 4/180*np.pi
 
         # axes settings:
         self.xlim = 5224
@@ -37,6 +37,7 @@ class Settings:
                             'radius': radius,
                             'centerx': self.screen_width - 10 - radius,
                             'centery': 10 + radius,
+                            '3d': False,
                             'car_fixed': True,
                             'edge': True}
 

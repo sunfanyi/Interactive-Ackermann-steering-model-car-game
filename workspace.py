@@ -45,8 +45,21 @@ class Workspace:
         # Convert black pixels caused by non-affine transformation to white
         gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         black_pixels = np.where(gray == 0)
-        self.map_img2d = warped.copy()
-        self.map_img2d[black_pixels] = [255, 255, 255]
+        self.map3d = warped.copy()
+        self.map3d[black_pixels] = [255, 255, 255]
+
+        self.pad_size = 10000
+        img = img.astype(np.uint8)
+        # pad edges with zero for cropping
+        pad = np.full((img.shape[0] + 2 * self.pad_size,
+                       img.shape[1] + 2 * self.pad_size, 3), 255, dtype=np.uint8)
+        pad[self.pad_size:self.pad_size + img.shape[0],
+            self.pad_size:self.pad_size + img.shape[1]] = img
+        self.map2d = pad
+        # self.map2d = gf.cv2_to_pygame(pad)
+
+
+
 
     def draw(self):
         self.draw_map()
@@ -56,13 +69,22 @@ class Workspace:
         merged_surface = pygame.Surface((self.settings.screen_width,
                                          self.settings.screen_height), pygame.SRCALPHA)
 
-        map_surface = pygame.surfarray.make_surface(self.map_img2d)
+        map_surface = pygame.surfarray.make_surface(self.map3d)
         merged_surface.blit(map_surface, (0, 0))
 
         # For the zoomed in map:
-        img = self.map_img2d.astype(np.uint8)
+        if self.settings.zoom_region['3d']:
+            zoom_factor = self.settings.zoom_region['factor']
+            img = self.map3d.astype(np.uint8)
+            car_center = self.car.car_origin2d
+            calibration_angle = 90
+        else:
+            zoom_factor = self.settings.zoom_region['factor'] / 5
+            img = self.map2d
+            car_center = self.car.car_origin3d + self.pad_size
+            car_center[0], car_center[1] = car_center[1], car_center[0]
+            calibration_angle = 0
 
-        zoom_factor = self.settings.zoom_region['factor']
         radius = self.settings.zoom_region['radius']
         centerx = self.settings.zoom_region['centerx']
         centery = self.settings.zoom_region['centery']
@@ -74,10 +96,10 @@ class Workspace:
         crop_size_h = radius / zoom_factor
         topleft = (centerx - radius, centery - radius)
 
-        start_row = int(self.car.car_origin2d[0] - crop_size_w)
-        start_col = int(self.car.car_origin2d[1] - crop_size_h)
-        end_row = int(self.car.car_origin2d[0] + crop_size_w)
-        end_col = int(self.car.car_origin2d[1] + crop_size_h)
+        start_row = int(car_center[0] - crop_size_w)
+        start_col = int(car_center[1] - crop_size_h)
+        end_row = int(car_center[0] + crop_size_w)
+        end_col = int(car_center[1] + crop_size_h)
         pre_cropped = img[start_row:end_row, start_col:end_col]
 
         # Resize
@@ -105,6 +127,9 @@ class Workspace:
         res = cropped.copy()
         res[black_pixels] = [255, 255, 255]
 
+        # res = gf.cv2_to_pygame(res)
+        res = np.fliplr(res)
+
         # Create surface
         zoomed_map_surface = pygame.Surface((window_w, window_h))
         pygame.surfarray.blit_array(zoomed_map_surface, res)
@@ -115,7 +140,7 @@ class Workspace:
 
         # Rotate zoomed-in map surface as car steering
         aligned_surface = pygame.transform.rotate(zoomed_map_surface,
-                                                  self.car.car_orientation*180/np.pi + 90)
+                                      self.car.car_orientation*180/np.pi + calibration_angle)
         rotated_center = aligned_surface.get_rect().center
         # rotation will change the surface center as the surface is fixed at top left corner
         aligned_topleft = (topleft[0] - (rotated_center[0] - original_center[0]),
