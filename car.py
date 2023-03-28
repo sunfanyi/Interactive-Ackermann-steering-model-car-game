@@ -166,6 +166,7 @@ class Car:
         self.T_body = gf.add_translation(R, self.car_origin3d)
         for i in range(4):
             R = gf.rotation(self.wheels_orientation[i], 'z')  # clockwise is positive
+            # R = gf.rotation(0, 'z')  # clockwise is positive
             T_1 = gf.add_translation(R)
 
             T_2 = gf.add_translation(np.eye(3), -self.wheel_centers_local[i])

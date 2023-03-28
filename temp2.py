@@ -1,39 +1,39 @@
-import cv2
-import numpy as np
+import pygame
 
-# read image
-img = cv2.imread('CWMap.jpg')
-img = cv2.resize(img, None, fx=0.2, fy=0.2)
-hh, ww = img.shape[:2]
-hh2 = hh // 2
-ww2 = ww // 2
+pygame.init()
 
-# define circles
-radius1 = 100
-radius2 = 75
-xc = hh // 2
-yc = ww // 2
+# Set up the Pygame display
+screen_width = 640
+screen_height = 480
+display_surface = pygame.display.set_mode((screen_width, screen_height))
 
-# draw filled circles in white on black background as masks
-mask = np.zeros_like(img)
-mask = cv2.circle(mask, (xc,yc), radius1, (255,255,255), -1)
+# Load two images for the screens
+image1 = pygame.image.load('CWMap.jpg')
+image2 = pygame.image.load('Gantt Chart Example.png')
 
-# subtract masks and make into single channel
-mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+# Create two Pygame Surface objects for the screens
+screen1 = pygame.Surface((screen_width, screen_height))
+screen2 = pygame.Surface((140, 180))
 
-# apply the mask to the image
-result = cv2.bitwise_and(img, img, mask=mask)
+# Fill the screens with the images
+screen1.blit(image1, (0, 0))
+screen2.blit(image2, (0, 0))
 
-gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-black_pixels = np.where(gray == 0)
-final = result.copy()
-final[black_pixels] = [255, 255, 255]
+# Set the initial screen to display
+current_screen = screen1
 
+# Run the Pygame event loop
+while True:
+    # Handle Pygame events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
 
-# save results
-cv2.imshow('lena_circle_masks', final)
+    # Draw the current screen to the display surface
+    display_surface.blit(screen1, (0, 0))
+    display_surface.blit(screen2, (300, 300))
 
-cv2.imshow('image', img)
-cv2.imshow('mask', mask)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    # Update the Pygame display
+    pygame.display.update()
+
