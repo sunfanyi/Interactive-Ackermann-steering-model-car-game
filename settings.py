@@ -74,10 +74,11 @@ class Settings:
         }
 
         # Car settings:
-        acceleration = 0.1
+        acceleration = 0.08
         self.car = {
             'acc': acceleration,   # acceleration (m/s2)
-            'steering_speed': 1.4 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
-            'max_steer': 80 / 180 * np.pi,  # rad
-            'max_speed': 30,  # m/s
+            'steering_speed': 0.4 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
+            'max_steer': 45 / 180 * np.pi,  # rad
+            'max_speed': 20,  # m/s
+            'steering_ratio': 10,  # between steering wheel and wheels
         }

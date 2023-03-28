@@ -72,8 +72,9 @@ class Workspace:
         self.draw_steering_wheel()
 
     def draw_steering_wheel(self):
+        angle = self.settings.car['steering_ratio'] * self.car.steering_angle * 180 / np.pi
         img_rotated = pygame.transform.rotate(self.img_steer,
-                                              -self.car.steering_angle * 180 / np.pi)
+                                              -angle)
         img_scaled = pygame.transform.scale(img_rotated,
                                             (self.settings.steering_wheel['w'],
                                              self.settings.steering_wheel['h']))
