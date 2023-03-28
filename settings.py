@@ -6,7 +6,6 @@
 # @Software: PyCharm
 
 import numpy as np
-import pygame
 
 
 class Settings:
@@ -31,7 +30,7 @@ class Settings:
             'xlim': xlim,
             'ylim': ylim,
             'zlim': zlim,
-            'origin2d': (200, 220),
+            'origin2d': (180, 200),
             'origin3d': [0, 0, 0],
             'xend': [xlim, 0, 0],  # X-axis range
             'yend': [0, ylim, 0],  # Y-axis range
@@ -41,9 +40,9 @@ class Settings:
             'z_tick_interval': 500,  # tick label interval for Z-axes
 
             # Scaling factors for plotting:
-            # for x: 800 = screen length, 5000 = image length, 2 = scale factor (reduce to make larger)
-            'x_factor': 800 / 5000 / 1.6,
-            'y_factor': 600 / 3600 / 1.2,
+            # for x: 800 = screen length, 5000 = image length, 1.6 = scale factor (reduce to make larger)
+            'x_factor': 800 / 5000 / 1.4,
+            'y_factor': 600 / 3600 / 1.,
             'z_factor': 0.1,
         }
 
@@ -66,8 +65,8 @@ class Settings:
         # Car settings:
         speed = 5
         self.car = {
-            'speed': speed,
-            'speed_during_steering': speed / 2,
-            'turning_speed': 0.7 / 180 * np.pi,
+            'v': speed,   # speed (m/s)
+            'v_steering': speed / 1.5,  # speed during steering (m/s)
+            'steering_speed': 0.7 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
         }
 

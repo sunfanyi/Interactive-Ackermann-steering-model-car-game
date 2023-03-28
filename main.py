@@ -50,6 +50,6 @@ def run_game():
 
         i += 1
         # print('next')
-        # time.sleep(0.1)
+        # time.sleep(1)
 
 run_game()

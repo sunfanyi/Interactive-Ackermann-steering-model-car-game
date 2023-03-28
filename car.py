@@ -29,8 +29,9 @@ class Car:
         # Used to update transform matrices
         self.car_origin3d = np.float32([0., 0., 0.])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-        self.car_orientation = 0  # in radians
         self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
+        self.car_orientation = 0  # theta, in radians
+        self.steering_angle = 0   # psi, in radians
 
         # View
         self.R_view = gf.trimetric_view()
@@ -204,35 +205,71 @@ class Car:
         Capture car moving from keyboard input and move the T matrices for car and wheels.
         Y-axis was flipped, so anticlockwise becomes negative and clockwise becomes positive.
         """
-
-        if self.turning_left or self.turning_right:
-            speed = self.settings.car['speed_during_steering']
+        if self.moving_fwd:
+            flag_fwd = 1
+        elif self.moving_bwd:
+            flag_fwd = -1
         else:
-            speed = self.settings.car['speed']
+            flag_fwd = 0
+
+        if self.turning_left:
+            flag_turn = 1
+        elif self.turning_right:
+            flag_turn = -1
+        else:
+            flag_turn = 0
+
+        if flag_turn == 0:
+            v = self.settings.car['v'] * flag_fwd
+        else:
+            v = self.settings.car['v_steering'] * flag_fwd
 
         if self.accelerate:
-            speed *= 2
+            v *= 2
 
-        if self.moving_fwd:
-            if self.turning_left:  # anticlockwise around z
-                self.car_orientation -= self.settings.car['turning_speed']
-                self.wheels_orientation = self.wheels_orientation - 0.1
-            if self.turning_right:  # clockwise around z
-                self.car_orientation += self.settings.car['turning_speed']
-                self.wheels_orientation = self.wheels_orientation + 0.1
+        psi_dot = -self.settings.car['steering_speed'] * flag_turn
 
-            self.car_origin3d[0] += speed * np.cos(self.car_orientation)  # x
-            self.car_origin3d[1] += speed * np.sin(self.car_orientation)  # y
-        if self.moving_bwd:
-            if self.turning_left:  # clockwise around z
-                self.car_orientation += self.settings.car['turning_speed']
-                self.wheels_orientation = self.wheels_orientation + 0.1
-            if self.turning_right:  # anticlockwise around z
-                self.car_orientation -= self.settings.car['turning_speed']
-                self.wheels_orientation = self.wheels_orientation - 0.1
+        theta = self.car_orientation
+        psi = self.steering_angle
+        mat_input = np.array([v, psi_dot])
+        mat_input_to_speed = np.array([[np.cos(theta), 0],
+                                       [np.sin(theta), 0],
+                                       [1 / self.wheel_base * np.tan(psi), 0],
+                                       [0, 1]])
+        mat_speed = np.matmul(mat_input_to_speed, mat_input)
+        self.car_origin3d[0] += mat_speed[0]  # x
+        self.car_origin3d[1] += mat_speed[1]  # y
+        self.car_orientation += mat_speed[2]  # theta
+        self.steering_angle += mat_speed[3]   # phi
 
-            self.car_origin3d[0] -= speed * np.cos(self.car_orientation)  # x
-            self.car_origin3d[1] -= speed * np.sin(self.car_orientation)  # y
+        if flag_turn == 0:
+            # steering wheel returns to initial position
+            if flag_fwd != 0:
+                self.steering_angle *= 0.90
+            else:
+                self.steering_angle *= 0.99
+
+        #
+        # if self.moving_fwd:
+        #     if self.turning_left:  # anticlockwise around z
+        #         self.car_orientation -= self.settings.car['psi']
+        #         self.wheels_orientation = self.wheels_orientation - 0.1
+        #     if self.turning_right:  # clockwise around z
+        #         self.car_orientation += self.settings.car['psi']
+        #         self.wheels_orientation = self.wheels_orientation + 0.1
+        #
+        #     self.car_origin3d[0] += speed * np.cos(self.car_orientation)  # x
+        #     self.car_origin3d[1] += speed * np.sin(self.car_orientation)  # y
+        # if self.moving_bwd:
+        #     if self.turning_left:  # clockwise around z
+        #         self.car_orientation += self.settings.car['turning_speedpsi']
+        #         self.wheels_orientation = self.wheels_orientation + 0.1
+        #     if self.turning_right:  # anticlockwise around z
+        #         self.car_orientation -= self.settings.car['psi']
+        #         self.wheels_orientation = self.wheels_orientation - 0.1
+        #
+        #     self.car_origin3d[0] -= speed * np.cos(self.car_orientation)  # x
+        #     self.car_origin3d[1] -= speed * np.sin(self.car_orientation)  # y
 
         self.apply_transformations()
 

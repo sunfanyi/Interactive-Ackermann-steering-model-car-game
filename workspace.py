@@ -171,7 +171,7 @@ class Workspace:
         x_label = axes_font.render("X", True, axes_color)
         self.screen.blit(x_label, xpoint_2d)
         # X-axis ticks
-        for i in range(0, xend[0] + x_tick_interval, x_tick_interval):
+        for i in range(0, xend[0], x_tick_interval):
             tick_x, tick_y = gf.point_3d_to_2d(i, 0, 0)
             tick_label = tick_font.render(str(i), True, tick_color)
             self.screen.blit(tick_label, (tick_x, tick_y))
@@ -184,7 +184,7 @@ class Workspace:
         y_label = axes_font.render("Y", True, axes_color)
         self.screen.blit(y_label, ypoint_2d)
         # Y-axis ticks
-        for i in range(y_tick_interval, yend[1] + y_tick_interval, y_tick_interval):
+        for i in range(y_tick_interval, yend[1], y_tick_interval):
             tick_x, tick_y = gf.point_3d_to_2d(0, i, 0)
             tick_label = tick_font.render(str(i), True, tick_color)
             self.screen.blit(tick_label, (tick_x, tick_y))
