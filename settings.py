@@ -27,6 +27,7 @@ class Settings:
             'w': map_screen_width,
             'h': map_screen_height,
             'bg_color': (255, 255, 255),
+            'path': 'Figures/CWMap.jpg',
             'xlim': xlim,
             'ylim': ylim,
             'zlim': zlim,
@@ -63,10 +64,19 @@ class Settings:
         }
 
         # Car settings:
-        speed = 5
+        acceleration = 0.1
         self.car = {
-            'v': speed,   # speed (m/s)
-            'v_steering': speed / 1.5,  # speed during steering (m/s)
-            'steering_speed': 0.7 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
+            'acc': acceleration,   # acceleration (m/s2)
+            'steering_speed': 1.4 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
+            'max_steer': 80 / 180 * np.pi,  # rad
+            'max_speed': 30,  # m/s
         }
 
+        self.steering_wheel = {
+            # 'topleft': (1000, 300),
+            'topleft': (map_screen_width - 10 - 2 * zoom_radius-150, 40),
+            'w': 100,
+            'h': 100,
+            'bg_color': (255, 255, 255),
+            'path': 'Figures/steering_wheel.png',
+        }

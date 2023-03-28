@@ -72,8 +72,8 @@ def check_keyup_event(event, car, large_car):
         car.turning_right = False
         large_car.turning_right = False
     elif event.key == pygame.K_SPACE:
-        car.accelerate = False
-        large_car.accelerate = False
+        car.brake = False
+        large_car.brake = False
 
 
 def check_car_moving(event, car, large_car):
@@ -90,11 +90,12 @@ def check_car_moving(event, car, large_car):
         car.turning_right = True
         large_car.turning_right = True
     elif event.key == pygame.K_SPACE:
-        car.accelerate = True
-        large_car.accelerate = True
+        car.brake = True
+        large_car.brake = True
 
 
-def update_screen(settings, screen, workspace, car, large_car, zoom_buttons, i):
+def update_screen(settings, screen1, screen2,
+                  workspace, car, large_car, zoom_buttons, i):
     # global x_factor
     # global y_factor
     # global z_factor
@@ -104,7 +105,7 @@ def update_screen(settings, screen, workspace, car, large_car, zoom_buttons, i):
     # y_factor = settings.y_factor
     # z_factor = settings.z_factor
     # origin2d = settings.origin2d
-    screen.fill(settings.map_screen['bg_color'])
+    screen1.fill(settings.map_screen['bg_color'])
 
     workspace.draw()
     car.draw()
@@ -115,7 +116,13 @@ def update_screen(settings, screen, workspace, car, large_car, zoom_buttons, i):
     for button in zoom_buttons:
         button.draw_button()
 
+    screen2.fill(settings.steering_wheel['bg_color'])
+    image2 = pygame.image.load(settings.steering_wheel['path'])
+    image2 = pygame.transform.rotate(image2, -car.steering_angle*180/np.pi)
+    image2 = pygame.transform.scale(image2, (settings.steering_wheel['w'], settings.steering_wheel['h']))
 
+
+    screen2.blit(image2, (0, 0))
 
 def rotation(theta, direction):
     if direction == 'x':

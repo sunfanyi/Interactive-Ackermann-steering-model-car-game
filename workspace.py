@@ -18,7 +18,7 @@ class Workspace:
         self.settings = settings
         self.car = car
 
-        img = cv2.imread('CWMap.jpg')
+        img = cv2.imread(self.settings.map_screen['path'])
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         self.img_w = img.shape[1]
@@ -58,17 +58,15 @@ class Workspace:
         self.map2d = pad
 
     def draw(self):
+        self.surface = pygame.Surface((self.settings.map_screen['w'],
+                                       self.settings.map_screen['h']), pygame.SRCALPHA)
         self.draw_map()
+        self.draw_zoomed_map()
+        self.screen.blit(self.surface, (0, 0))
+        
         self.draw_axes()
-
-    def draw_map(self):
-        merged_surface = pygame.Surface((self.settings.map_screen['w'],
-                                         self.settings.map_screen['h']), pygame.SRCALPHA)
-
-        map_surface = pygame.surfarray.make_surface(self.map3d)
-        merged_surface.blit(map_surface, (0, 0))
-
-        # For the zoomed in map:
+        
+    def draw_zoomed_map(self):
         if self.settings.zoom_region['3d']:
             zoom_factor = self.settings.zoom_region['factor']
             img = self.map3d.astype(np.uint8)
@@ -125,30 +123,32 @@ class Workspace:
             res = np.fliplr(res)
 
         # Create surface
-        zoomed_map_surface = pygame.Surface((window_w, window_h))
-        pygame.surfarray.blit_array(zoomed_map_surface, res)
-        original_center = zoomed_map_surface.get_rect().center
+        surface = pygame.Surface((window_w, window_h))
+        pygame.surfarray.blit_array(surface, res)
+        original_center = surface.get_rect().center
 
         if self.settings.zoom_region['edge']:
-            pygame.draw.circle(zoomed_map_surface, (50, 50, 50), (xc, yc), radius, 3)
+            pygame.draw.circle(surface, (50, 50, 50), (xc, yc), radius, 3)
 
         # Rotate zoomed-in map surface as car steering
 
         if self.settings.zoom_region['car_fixed']:
-            aligned_surface = pygame.transform.rotate(zoomed_map_surface,
-                                          self.car.car_orientation*180/np.pi + calibration_angle)
+            aligned_surface = pygame.transform.rotate(surface,
+                              self.car.car_orientation*180/np.pi + calibration_angle)
         else:
-            aligned_surface = zoomed_map_surface
+            aligned_surface = surface
 
         rotated_center = aligned_surface.get_rect().center
         # rotation will change the surface center as the surface is fixed at top left corner
         aligned_topleft = (topleft[0] - (rotated_center[0] - original_center[0]),
                            topleft[1] - (rotated_center[1] - original_center[1]))
 
-        merged_surface.blit(aligned_surface, aligned_topleft)
+        self.surface.blit(aligned_surface, aligned_topleft)
 
-        self.screen.blit(merged_surface, (0, 0))
-
+    def draw_map(self):
+        map_surface = pygame.surfarray.make_surface(self.map3d)
+        self.surface.blit(map_surface, (0, 0))
+        
     def draw_axes(self):
         origin3d = self.settings.map_screen['origin3d']
 
