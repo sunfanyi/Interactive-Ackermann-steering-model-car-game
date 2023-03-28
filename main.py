@@ -19,14 +19,19 @@ def run_game():
     pygame.init()
     settings = Settings()
     screen = pygame.display.set_mode(
-        (settings.screen_width, settings.screen_height))
+        (settings.main_screen['w'], settings.main_screen['h']))
     pygame.display.set_caption('Mobile Robot')
 
-    my_car = Car(settings, screen)
+    screen1 = pygame.Surface((settings.map_screen['w'],
+                              settings.map_screen['h']),
+                             pygame.SRCALPHA)
+    screen2 = pygame.Surface((140, 180))
 
-    my_large_car = LargeCar(settings, screen)
-    workspace = Workspace(settings, screen, my_car)
-    zoom_buttons = [Button(settings, screen, label)
+    my_car = Car(settings, screen1)
+
+    my_large_car = LargeCar(settings, screen1)
+    workspace = Workspace(settings, screen1, my_car)
+    zoom_buttons = [Button(settings, screen1, label)
                     for label in ['+', '-', 'R']]
 
     i = 0
@@ -37,10 +42,14 @@ def run_game():
 
         my_large_car.update_zoomed_map(my_car.car_orientation,
                                        my_car.wheels_orientation)
-        gf.update_screen(settings, screen, workspace, my_car, my_large_car, zoom_buttons, i)
+        gf.update_screen(settings, screen1, workspace, my_car, my_large_car, zoom_buttons, i)
+
+        screen.blit(screen1, settings.map_screen['topleft'])
+        screen.blit(screen2, (800, 0))
+        pygame.display.update()
+
         i += 1
         # print('next')
         # time.sleep(0.1)
 
 run_game()
-

@@ -31,14 +31,14 @@ class Workspace:
                                [0, self.img_h],
                                [self.img_w, self.img_h]])
         # corner points to:
-        points3d = [self.settings.origin3d,
-                    self.settings.xend,
-                    self.settings.yend,
-                    [self.settings.xlim, self.settings.ylim, 0]]
+        points3d = [self.settings.map_screen['origin3d'],
+                    self.settings.map_screen['xend'],
+                    self.settings.map_screen['yend'],
+                    [self.settings.map_screen['xlim'], self.settings.map_screen['ylim'], 0]]
         cornersB = np.float32([gf.point_3d_to_2d(*point) for point in points3d])
         M = cv2.getPerspectiveTransform(cornersA, cornersB)
-        warped = cv2.warpPerspective(img, M, (self.settings.screen_width,
-                                              self.settings.screen_height))
+        warped = cv2.warpPerspective(img, M, (self.settings.map_screen['w'],
+                                              self.settings.map_screen['h']))
 
         warped = gf.cv2_to_pygame(warped)
 
@@ -62,8 +62,8 @@ class Workspace:
         self.draw_axes()
 
     def draw_map(self):
-        merged_surface = pygame.Surface((self.settings.screen_width,
-                                         self.settings.screen_height), pygame.SRCALPHA)
+        merged_surface = pygame.Surface((self.settings.map_screen['w'],
+                                         self.settings.map_screen['h']), pygame.SRCALPHA)
 
         map_surface = pygame.surfarray.make_surface(self.map3d)
         merged_surface.blit(map_surface, (0, 0))
@@ -82,15 +82,13 @@ class Workspace:
             calibration_angle = 0
 
         radius = self.settings.zoom_region['radius']
-        centerx = self.settings.zoom_region['centerx']
-        centery = self.settings.zoom_region['centery']
-        window_w = radius * 2 + 2
-        window_h = radius * 2 + 2
+        topleft = self.settings.zoom_region['topleft']
+        window_w = radius * 2 + 10
+        window_h = radius * 2 + 10
 
         # Pre-crop: (Rectangular)
         crop_size_w = radius / zoom_factor
         crop_size_h = radius / zoom_factor
-        topleft = (centerx - radius, centery - radius)
 
         start_row = int(car_center[0] - crop_size_w)
         start_col = int(car_center[1] - crop_size_h)
@@ -152,14 +150,14 @@ class Workspace:
         self.screen.blit(merged_surface, (0, 0))
 
     def draw_axes(self):
-        origin3d = self.settings.origin3d
+        origin3d = self.settings.map_screen['origin3d']
 
-        xend = self.settings.xend
-        yend = self.settings.yend
-        zend = self.settings.zend
-        x_tick_interval = self.settings.x_tick_interval
-        y_tick_interval = self.settings.y_tick_interval
-        z_tick_interval = self.settings.z_tick_interval
+        xend = self.settings.map_screen['xend']
+        yend = self.settings.map_screen['yend']
+        zend = self.settings.map_screen['zend']
+        x_tick_interval = self.settings.map_screen['x_tick_interval']
+        y_tick_interval = self.settings.map_screen['y_tick_interval']
+        z_tick_interval = self.settings.map_screen['z_tick_interval']
 
         axes_font = pygame.font.Font(None, 24)  # font for axes labels
         tick_font = pygame.font.Font(None, 18)  # font for tick labels

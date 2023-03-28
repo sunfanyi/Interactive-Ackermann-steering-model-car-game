@@ -34,7 +34,7 @@ class Car:
 
         # View
         self.R_view = gf.trimetric_view()
-        self.offset = self.settings.origin2d
+        self.offset = self.settings.map_screen['origin2d']
 
         # Car control
         self.moving_fwd = False
@@ -206,29 +206,29 @@ class Car:
         """
 
         if self.turning_left or self.turning_right:
-            speed = self.settings.speed_during_steering
+            speed = self.settings.car['speed_during_steering']
         else:
-            speed = self.settings.car_speed_factor
+            speed = self.settings.car['speed']
 
         if self.accelerate:
             speed *= 2
 
         if self.moving_fwd:
             if self.turning_left:  # anticlockwise around z
-                self.car_orientation -= self.settings.car_turning_speed
+                self.car_orientation -= self.settings.car['turning_speed']
                 self.wheels_orientation = self.wheels_orientation - 0.1
             if self.turning_right:  # clockwise around z
-                self.car_orientation += self.settings.car_turning_speed
+                self.car_orientation += self.settings.car['turning_speed']
                 self.wheels_orientation = self.wheels_orientation + 0.1
 
             self.car_origin3d[0] += speed * np.cos(self.car_orientation)  # x
             self.car_origin3d[1] += speed * np.sin(self.car_orientation)  # y
         if self.moving_bwd:
             if self.turning_left:  # clockwise around z
-                self.car_orientation += self.settings.car_turning_speed
+                self.car_orientation += self.settings.car['turning_speed']
                 self.wheels_orientation = self.wheels_orientation + 0.1
             if self.turning_right:  # anticlockwise around z
-                self.car_orientation -= self.settings.car_turning_speed
+                self.car_orientation -= self.settings.car['turning_speed']
                 self.wheels_orientation = self.wheels_orientation - 0.1
 
             self.car_origin3d[0] -= speed * np.cos(self.car_orientation)  # x
@@ -278,9 +278,9 @@ class LargeCar(Car):
         else:  # top view
             self.R_view = np.eye(3)
 
-        centerx = self.settings.zoom_region['centerx']
-        centery = self.settings.zoom_region['centery']
-        self.offset = (centerx, centery)
+        topleft = self.settings.zoom_region['topleft']
+        self.offset = (topleft[0] + self.settings.zoom_region['radius'] + 5,
+                       topleft[1] + self.settings.zoom_region['radius'] + 5)
 
     def update_zoomed_map(self, car_orientation, wheels_orientation):
         if self.settings.zoom_region['car_fixed']:

@@ -22,14 +22,15 @@ class Button:
 
         self.rect = pygame.Rect(0, 0, self.width, self.height)
         if msg == '+':
-            x = self.settings.zoom_region['centerx'] - 0.7*self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['centery'] + 1.2*self.settings.zoom_region['radius']
+            self.settings.zoom_region['topleft']
+            x = self.settings.zoom_region['topleft'][0] + 0.3*self.settings.zoom_region['radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
         elif msg == '-':
-            x = self.settings.zoom_region['centerx']
-            y = self.settings.zoom_region['centery'] + 1.2*self.settings.zoom_region['radius']
+            x = self.settings.zoom_region['topleft'][0] + self.settings.zoom_region['radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
         elif msg == 'R':
-            x = self.settings.zoom_region['centerx'] + 0.7*self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['centery'] + 1.2*self.settings.zoom_region['radius']
+            x = self.settings.zoom_region['topleft'][0] + 1.7*self.settings.zoom_region['radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
         else:
             raise ValueError('Undefined button message.')
 

@@ -12,10 +12,10 @@ from settings import Settings
 
 my_settings = Settings()
 
-x_factor = my_settings.x_factor
-y_factor = my_settings.y_factor
-z_factor = my_settings.z_factor
-origin2d = my_settings.origin2d
+x_factor = my_settings.map_screen['x_factor']
+y_factor = my_settings.map_screen['y_factor']
+z_factor = my_settings.map_screen['z_factor']
+origin2d = my_settings.map_screen['origin2d']
 
 
 def check_event(settings, car, large_car, zoom_buttons):
@@ -49,7 +49,7 @@ def check_mouse_click_event(settings, large_car,
         large_car.scale /= 1.1
         large_car.reset_dimensions()
     if reset_click:
-        settings.initialise_zoom_settings()
+        settings.zoom_region['factor'] = settings.initial_zoom_in_factor
         large_car.scale = settings.zoom_region['factor'] * 40
         large_car.reset_dimensions()
 
@@ -104,7 +104,7 @@ def update_screen(settings, screen, workspace, car, large_car, zoom_buttons, i):
     # y_factor = settings.y_factor
     # z_factor = settings.z_factor
     # origin2d = settings.origin2d
-    screen.fill(settings.bg_color)
+    screen.fill(settings.map_screen['bg_color'])
 
     workspace.draw()
     car.draw()
@@ -115,7 +115,6 @@ def update_screen(settings, screen, workspace, car, large_car, zoom_buttons, i):
     for button in zoom_buttons:
         button.draw_button()
 
-    pygame.display.flip()
 
 
 def rotation(theta, direction):

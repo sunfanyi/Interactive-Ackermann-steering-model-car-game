@@ -11,55 +11,63 @@ import pygame
 
 class Settings:
     def __init__(self):
-        self.bg_color = (255, 255, 255)
-        self.screen_width = 800
-        self.screen_height = 600
+        self.main_screen = {
+            'bg_color': (255, 255, 255),
+            'w': 1200,
+            'h': 600,
+        }
 
-        # axes settings:
-        self.xlim = 5224
-        self.ylim = 3680
-        self.zlim = 500
-        self.origin2d = (200, 220)
-        self.origin3d = [0, 0, 0]
-        self.xend = [self.xlim, 0, 0]  # X-axis range
-        self.yend = [0, self.ylim, 0]  # Y-axis range
-        self.zend = [0, 0, self.zlim]  # Z-axis range
-        self.x_tick_interval = 500  # tick label interval for X-axes
-        self.y_tick_interval = 500  # tick label interval for Y-axes
-        self.z_tick_interval = 500  # tick label interval for Z-axes
+        # Main screen with 3d map:
+        map_screen_width = 800
+        map_screen_height = 600
+        xlim = 5224
+        ylim = 3680
+        zlim = 500
+        self.map_screen = {
+            'topleft': (0, 0),
+            'w': map_screen_width,
+            'h': map_screen_height,
+            'bg_color': (255, 255, 255),
+            'xlim': xlim,
+            'ylim': ylim,
+            'zlim': zlim,
+            'origin2d': (200, 220),
+            'origin3d': [0, 0, 0],
+            'xend': [xlim, 0, 0],  # X-axis range
+            'yend': [0, ylim, 0],  # Y-axis range
+            'zend': [0, 0, zlim],  # Z-axis range
+            'x_tick_interval': 500,  # tick label interval for X-axes
+            'y_tick_interval': 500,  # tick label interval for Y-axes
+            'z_tick_interval': 500,  # tick label interval for Z-axes
 
-        self.initialise_dynamic_settings()
-        self.initialise_zoom_settings()
+            # Scaling factors for plotting:
+            # for x: 800 = screen length, 5000 = image length, 2 = scale factor (reduce to make larger)
+            'x_factor': 800 / 5000 / 1.6,
+            'y_factor': 600 / 3600 / 1.2,
+            'z_factor': 0.1,
+        }
 
-    def initialise_dynamic_settings(self):
-        # Scaling factors for plotting:
-        # for x: 800 = screen length, 5000 = image length, 2 = scale factor (reduce to make larger)
-        self.x_factor = 800/5000/1.6
-        self.y_factor = 600/3600/1.2
-        self.z_factor = 0.1
-
-        self.car_speed_factor = 5
-        self.speed_during_steering = self.car_speed_factor / 2
-        self.car_turning_speed = 0.7/180*np.pi
-
-    def initialise_zoom_settings(self):
         # zoom in region:
-        radius = 100
-        self.zoom_region = {'factor': 2,
-                            'radius': radius,
-                            'centerx': self.screen_width - 10 - radius,
-                            'centery': 10 + radius,
-                            '3d': False,
-                            'car_fixed': True,
-                            # '3d': True,
-                            # 'car_fixed': False,
-                            'edge': True}
+        zoom_radius = 100
+        self.initial_zoom_in_factor = 2
+        self.zoom_region = {
+            'topleft': (map_screen_width - 10 - 2 * zoom_radius, 10),
+            'w': zoom_radius * 2 + 10,
+            'h': zoom_radius * 2 + 10,
+            'radius': zoom_radius,
+            'factor': self.initial_zoom_in_factor,  # dynamic value
+            '3d': False,
+            'car_fixed': True,
+            # '3d': True,
+            # 'car_fixed': False,
+            'edge': True
+        }
 
-    # def zoom_in(self):
-    #     # self.zoom_factor += 0.001
-    #     self.x_factor *= self.zoom_factor
-    #     self.y_factor *= self.zoom_factor
-    #     self.z_factor = 0.1
-
-
+        # Car settings:
+        speed = 5
+        self.car = {
+            'speed': speed,
+            'speed_during_steering': speed / 2,
+            'turning_speed': 0.7 / 180 * np.pi,
+        }
 
