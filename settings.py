@@ -16,7 +16,7 @@ class Settings:
             'h': 600,
         }
 
-        # Main screen with 3d map:
+        # Main 3d map:
         map_screen_width = 800
         map_screen_height = 600
         xlim = 5224
@@ -63,15 +63,7 @@ class Settings:
             'edge': True
         }
 
-        # Car settings:
-        acceleration = 0.1
-        self.car = {
-            'acc': acceleration,   # acceleration (m/s2)
-            'steering_speed': 1.4 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
-            'max_steer': 80 / 180 * np.pi,  # rad
-            'max_speed': 30,  # m/s
-        }
-
+        # steering wheel region:
         self.steering_wheel = {
             # 'topleft': (1000, 300),
             'topleft': (map_screen_width - 10 - 2 * zoom_radius-150, 40),
@@ -79,4 +71,13 @@ class Settings:
             'h': 100,
             'bg_color': (255, 255, 255),
             'path': 'Figures/steering_wheel.png',
+        }
+
+        # Car settings:
+        acceleration = 0.1
+        self.car = {
+            'acc': acceleration,   # acceleration (m/s2)
+            'steering_speed': 1.4 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
+            'max_steer': 80 / 180 * np.pi,  # rad
+            'max_speed': 30,  # m/s
         }

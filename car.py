@@ -9,6 +9,7 @@ import numpy as np
 import pygame
 
 import game_function as gf
+from inverse_kinematics import calc_inverse
 
 
 class Car:
@@ -26,13 +27,18 @@ class Car:
         self.T_body = np.eye(4)
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
-        # Used to update transform matrices
+        # State properties
         self.car_origin3d = np.float32([0., 0., 0.])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-        self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
         self.car_orientation = 0  # theta, in radians
         self.steering_angle = 0   # psi, in radians
         self.car_speed = 0  # in m/s
+
+        # Kinematics properties (update in inverse kinematics)
+        self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
+        self.P_i_dot = np.float32([0, 0, 0, 0])  # X dot, Y dot, theta dot, psi dot
+        self.wheels_speed = np.float32([0, 0, 0, 0])  # in rad/s, 4 wheels
+        self.ICR = np.nan  # instantaneous center of rotation
 
         # View
         self.R_view = gf.trimetric_view()
@@ -220,33 +226,28 @@ class Car:
         else:  # slow down
             self.car_speed *= 0.98
 
-        psi_dot = 0
+        self.steering_rate = 0
         if turning:
             self.car_speed *= 0.95  # slow down
             if np.abs(self.steering_angle) < self.settings.car['max_steer']:
                 if self.turning_left:
-                    psi_dot = -self.settings.car['steering_speed']
+                    self.steering_rate = -self.settings.car['steering_speed']
                 else:
-                    psi_dot = self.settings.car['steering_speed']
+                    self.steering_rate = self.settings.car['steering_speed']
         else:
             # steering wheel returns to initial position
-            self.steering_angle *= 0.95 if moving != 0 else 0.99
+            self.steering_angle *= 0.94 if moving != 0 else 0.99
 
         if self.brake:
             self.car_speed *= 0.9
 
-        theta = self.car_orientation
-        psi = self.steering_angle
-        mat_input = np.array([self.car_speed, psi_dot])
-        mat_input_to_speed = np.array([[np.cos(theta), 0],
-                                       [np.sin(theta), 0],
-                                       [1 / self.wheel_base * np.tan(psi), 0],
-                                       [0, 1]])
-        mat_speed = np.matmul(mat_input_to_speed, mat_input)
-        self.car_origin3d[0] += mat_speed[0]  # x
-        self.car_origin3d[1] += mat_speed[1]  # y
-        self.car_orientation += mat_speed[2]  # theta
-        self.steering_angle += mat_speed[3]   # phi
+        # after getting inputs (speed, steering rate), feed to inverse kinematics
+        calc_inverse(self)
+        # update car position and orientation
+        self.car_origin3d[0] += self.P_i_dot[0]  # x
+        self.car_origin3d[1] += self.P_i_dot[1]  # y
+        self.car_orientation += self.P_i_dot[2]  # theta
+        self.steering_angle += self.P_i_dot[3]  # phi
 
         self.apply_transformations()
 

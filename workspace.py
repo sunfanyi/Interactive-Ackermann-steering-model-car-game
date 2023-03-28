@@ -21,15 +21,22 @@ class Workspace:
         img = cv2.imread(self.settings.map_screen['path'])
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        self.img_w = img.shape[1]
-        self.img_h = img.shape[0]
+        self.get_3D_map(img)
+        self.get_2D_map(img)
+
+        # steering wheel
+        self.img_steer = pygame.image.load(self.settings.steering_wheel['path'])
+
+    def get_3D_map(self, img):
+        img_w = img.shape[1]
+        img_h = img.shape[0]
 
         # Apply non-affine transformation
         # corner points from:
         cornersA = np.float32([[0, 0],
-                               [self.img_w, 0],
-                               [0, self.img_h],
-                               [self.img_w, self.img_h]])
+                               [img_w, 0],
+                               [0, img_h],
+                               [img_w, img_h]])
         # corner points to:
         points3d = [self.settings.map_screen['origin3d'],
                     self.settings.map_screen['xend'],
@@ -39,7 +46,6 @@ class Workspace:
         M = cv2.getPerspectiveTransform(cornersA, cornersB)
         warped = cv2.warpPerspective(img, M, (self.settings.map_screen['w'],
                                               self.settings.map_screen['h']))
-
         warped = gf.cv2_to_pygame(warped)
 
         # Convert black pixels caused by non-affine transformation to white
@@ -48,24 +54,32 @@ class Workspace:
         self.map3d = warped.copy()
         self.map3d[black_pixels] = [255, 255, 255]
 
-        self.pad_size = 10000
+    def get_2D_map(self, img):
+        pad_size = 10000
         img = img.astype(np.uint8)
         # pad edges with zero for cropping
-        pad = np.full((img.shape[0] + 2 * self.pad_size,
-                       img.shape[1] + 2 * self.pad_size, 3), 255, dtype=np.uint8)
-        pad[self.pad_size:self.pad_size + img.shape[0],
-            self.pad_size:self.pad_size + img.shape[1]] = img
+        pad = np.full((img.shape[0] + 2 * pad_size,
+                       img.shape[1] + 2 * pad_size, 3), 255, dtype=np.uint8)
+        pad[pad_size:pad_size + img.shape[0],
+            pad_size:pad_size + img.shape[1]] = img
+        self.pad_size = pad_size
         self.map2d = pad
 
     def draw(self):
-        self.surface = pygame.Surface((self.settings.map_screen['w'],
-                                       self.settings.map_screen['h']), pygame.SRCALPHA)
         self.draw_map()
         self.draw_zoomed_map()
-        self.screen.blit(self.surface, (0, 0))
-        
         self.draw_axes()
-        
+        self.draw_steering_wheel()
+
+    def draw_steering_wheel(self):
+        img_rotated = pygame.transform.rotate(self.img_steer,
+                                              -self.car.steering_angle * 180 / np.pi)
+        img_scaled = pygame.transform.scale(img_rotated,
+                                            (self.settings.steering_wheel['w'],
+                                             self.settings.steering_wheel['h']))
+        self.screen.blit(img_scaled,
+                         self.settings.steering_wheel['topleft'])
+
     def draw_zoomed_map(self):
         if self.settings.zoom_region['3d']:
             zoom_factor = self.settings.zoom_region['factor']
@@ -78,16 +92,12 @@ class Workspace:
             car_center = self.car.car_origin3d + self.pad_size
             car_center[0], car_center[1] = car_center[1], car_center[0]
             calibration_angle = 0
-
         radius = self.settings.zoom_region['radius']
         topleft = self.settings.zoom_region['topleft']
-        window_w = radius * 2 + 10
-        window_h = radius * 2 + 10
 
         # Pre-crop: (Rectangular)
         crop_size_w = radius / zoom_factor
         crop_size_h = radius / zoom_factor
-
         start_row = int(car_center[0] - crop_size_w)
         start_col = int(car_center[1] - crop_size_h)
         end_row = int(car_center[0] + crop_size_w)
@@ -99,9 +109,9 @@ class Workspace:
                             interpolation=cv2.INTER_CUBIC)
 
         # pad to avoid index error caused by floating rounding
-        padded = np.ones((window_w, window_h, 3)) * 255
+        padded = np.ones((self.settings.zoom_region['w'],
+                          self.settings.zoom_region['h'], 3)) * 255
         padded[:scaled.shape[0], :scaled.shape[1], :] = scaled
-
         padded = padded.astype(np.uint8)
 
         # Circular crop
@@ -109,45 +119,41 @@ class Workspace:
         yc = padded.shape[1] // 2
         mask = np.zeros_like(padded, dtype=np.uint8)
         mask = cv2.circle(mask, (xc, yc), radius, (255, 255, 255), -1)
-
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-
         cropped = cv2.bitwise_and(padded, padded, mask=mask)
-
         gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
         black_pixels = np.where(gray == 0)
         res = cropped.copy()
         res[black_pixels] = [255, 255, 255]
-
         if not self.settings.zoom_region['3d']:
             res = np.fliplr(res)
 
         # Create surface
-        surface = pygame.Surface((window_w, window_h))
-        pygame.surfarray.blit_array(surface, res)
-        original_center = surface.get_rect().center
+        zoom_map_sur = pygame.Surface((self.settings.zoom_region['w'],
+                                       self.settings.zoom_region['h']))
+        pygame.surfarray.blit_array(zoom_map_sur, res)
+        original_center = zoom_map_sur.get_rect().center
 
         if self.settings.zoom_region['edge']:
-            pygame.draw.circle(surface, (50, 50, 50), (xc, yc), radius, 3)
-
-        # Rotate zoomed-in map surface as car steering
+            pygame.draw.circle(zoom_map_sur, (50, 50, 50), (xc, yc), radius, 3)
 
         if self.settings.zoom_region['car_fixed']:
-            aligned_surface = pygame.transform.rotate(surface,
+            # Rotate zoomed-in map surface as car steering
+            aligned_surface = pygame.transform.rotate(zoom_map_sur,
                               self.car.car_orientation*180/np.pi + calibration_angle)
         else:
-            aligned_surface = surface
+            aligned_surface = zoom_map_sur
 
         rotated_center = aligned_surface.get_rect().center
         # rotation will change the surface center as the surface is fixed at top left corner
         aligned_topleft = (topleft[0] - (rotated_center[0] - original_center[0]),
                            topleft[1] - (rotated_center[1] - original_center[1]))
 
-        self.surface.blit(aligned_surface, aligned_topleft)
+        self.screen.blit(aligned_surface, aligned_topleft)
 
     def draw_map(self):
         map_surface = pygame.surfarray.make_surface(self.map3d)
-        self.surface.blit(map_surface, (0, 0))
+        self.screen.blit(map_surface, (0, 0))
         
     def draw_axes(self):
         origin3d = self.settings.map_screen['origin3d']

@@ -94,7 +94,7 @@ def check_car_moving(event, car, large_car):
         large_car.brake = True
 
 
-def update_screen(settings, screen1, screen2,
+def update_screen(settings, screen1,
                   workspace, car, large_car, zoom_buttons, i):
     # global x_factor
     # global y_factor
@@ -116,13 +116,6 @@ def update_screen(settings, screen1, screen2,
     for button in zoom_buttons:
         button.draw_button()
 
-    screen2.fill(settings.steering_wheel['bg_color'])
-    image2 = pygame.image.load(settings.steering_wheel['path'])
-    image2 = pygame.transform.rotate(image2, -car.steering_angle*180/np.pi)
-    image2 = pygame.transform.scale(image2, (settings.steering_wheel['w'], settings.steering_wheel['h']))
-
-
-    screen2.blit(image2, (0, 0))
 
 def rotation(theta, direction):
     if direction == 'x':
@@ -240,5 +233,5 @@ def cv2_to_pygame(image):
     image = np.rot90(image)
     return image
 
-
-
+def inverse_kinematics(car):
+    print(car)
