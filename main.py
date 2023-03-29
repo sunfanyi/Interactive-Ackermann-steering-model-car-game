@@ -12,7 +12,7 @@ import game_function as gf
 from workspace import Workspace
 from car import Car, LargeCar
 from settings import Settings
-from button import Button
+from button import ZoomButton
 from latex_window import LatexWindow
 
 
@@ -36,7 +36,7 @@ def run_game():
 
     my_large_car = LargeCar(settings, screen1)
     workspace = Workspace(settings, screen1, my_car)
-    zoom_buttons = [Button(settings, screen1, label)
+    zoom_buttons = [ZoomButton(settings, screen1, label)
                     for label in ['+', '-', 'R']]
     latex_window = LatexWindow(settings, screen2, my_car)
 
@@ -48,7 +48,6 @@ def run_game():
         gf.check_event(settings, my_car, my_large_car, zoom_buttons)
 
         my_car.update()
-
         my_large_car.update_zoomed_map(my_car.car_orientation,
                                        my_car.wheels_orientation)
         latex_window.update()

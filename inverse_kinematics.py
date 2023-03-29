@@ -6,7 +6,7 @@
 # @Software: PyCharm
 
 import numpy as np
-from math import sin, cos, tan, atan2, sqrt, pi
+from math import sin, cos, tan, atan, sqrt
 
 from game_function import rotation
 
@@ -31,8 +31,8 @@ def calc_inverse(car):
                                    [1 / l * tan(psi), 0],
                                    [0, 1]])
     # Velocity metrix in global frame
-    car.P_i_dot = np.matmul(mat_input_to_speed, mat_input)
-    theta_dot = car.P_i_dot[2]
+    P_i_dot = np.matmul(mat_input_to_speed, mat_input)
+    theta_dot = P_i_dot[2]
 
     # calculate rear wheels angular velocities
     RI0 = rotation(theta, 'z')
@@ -47,12 +47,12 @@ def calc_inverse(car):
         R = B/2 * ((vel_RL + vel_RR) / (vel_RL - vel_RR))
 
         # calculate front wheels orientations
-        beta_FL = - atan2(l, R + B/2)
-        beta_FR = - atan2(l, R - B/2)
+        beta_FL = - atan(l / (R + B/2))
+        beta_FR = - atan(l / (R - B/2))
 
         # calculate front wheels angular velocities
-        vel_FL = theta_dot * sqrt(l**2 + (R + B/2)**2) / r
-        vel_FR = theta_dot * sqrt(l**2 + (R - B/2)**2) / r
+        vel_FL = np.abs(theta_dot) * sqrt(l**2 + (R + B/2)**2) / r
+        vel_FR = np.abs(theta_dot) * sqrt(l**2 + (R - B/2)**2) / r
     else:
         R = np.nan
         beta_FL = 0
@@ -64,5 +64,6 @@ def calc_inverse(car):
     car.ICR = R
     car.wheels_orientation = np.float32([beta_FL, beta_FR, 0, 0])
     car.wheels_speed = np.float32([vel_FL, vel_FR, vel_RL, vel_RR])
+    car.P_i_dot = P_i_dot
 
 

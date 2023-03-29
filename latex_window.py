@@ -6,12 +6,13 @@
 # @Software: PyCharm
 
 import matplotlib
-
+# non-interactive backend to optimise speed
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pygame
 import numpy as np
 import io
+
 
 class LatexWindow:
     def __init__(self, settings, screen, car):
@@ -19,7 +20,6 @@ class LatexWindow:
         self.screen = screen
         self.car = car
 
-        self.cache = {}
         self.render_symbols()
 
     def render_symbols(self):
@@ -48,7 +48,8 @@ class LatexWindow:
             'Inputs:': (0, 0),
             'Outputs:': (0, 3.1 / 8)
         }
-        # adjust ratio to change figsize, fontsize, DPI to maximise speed
+
+        # adjust ratio to change figsize, fontsize, DPI to optimise speed
         ratio = 10
         fig = plt.figure(figsize=(22 * ratio, 20 * ratio))
         fig.patch.set_visible(False)
@@ -66,21 +67,35 @@ class LatexWindow:
         plt.savefig(buf, format='png', dpi=10 // ratio, bbox_inches='tight', pad_inches=0)
         buf.seek(0)
 
-        sur = pygame.image.load(buf)
-        self.surface_rendered = sur
-        # self.surface_rendered = pygame.transform.scale(sur, (self.settings.latex_region['w'],
-        #                                                self.settings.latex_region['h']))
+        self.surface_rendered = pygame.image.load(buf)
 
     def update(self):
+        """
+        The car is flipped with Y-axis, so left key actually represents turning right
+        Therefore:
+            1. Clockwise rotation around Z-axis is positive.
+            2. Left wheels become right wheels, and vice versa.
+            3. Wheels' orientation change sign as left turn becomes right turn.
+        """
         self.surface_updating = pygame.Surface((self.settings.latex_region['w'],
-                                  self.settings.latex_region['h']),
-                                 pygame.SRCALPHA)
-        values = [self.car.car_speed, self.car.P_i_dot[3],
-                  self.car.P_i_dot[0], self.car.P_i_dot[1], self.car.P_i_dot[2],
-                  self.car.wheels_orientation[0] * 180 / np.pi,
-                  self.car.wheels_speed[0], self.car.wheels_speed[2],
-                  self.car.wheels_orientation[1] * 180 / np.pi,
-                  self.car.wheels_speed[1], self.car.wheels_speed[3]]
+                                                self.settings.latex_region['h']),
+                                               pygame.SRCALPHA)
+
+        values = [self.car.car_speed,  # V
+                  -self.car.P_i_dot[3],  # dot_psi
+
+                  self.car.P_i_dot[0],  # x dot
+                  self.car.P_i_dot[1],  # y dot
+                  - self.car.P_i_dot[2],  # theta dot
+
+                  - self.car.wheels_orientation[1] * 180 / np.pi,  # beta_FL
+                  self.car.wheels_speed[1],  # phi_FL dot
+                  self.car.wheels_speed[3],  # phi_RL dot
+
+                  - self.car.wheels_orientation[0] * 180 / np.pi,  # beta_FR
+                  self.car.wheels_speed[0],  # phi_FR dot
+                  self.car.wheels_speed[2]]  # phi_RR dot
+
         units = ['m/s', 'rad/s', 'm/s', 'm/s', 'rad/s',
                  'deg', 'rad/s', 'rad/s', 'deg', 'rad/s', 'rad/s']
 
@@ -88,7 +103,6 @@ class LatexWindow:
         rect = self.surface_rendered.get_rect()
         w = rect.width
         h = rect.height
-        print(w, h)
         for i, (val, unit) in enumerate(zip(values, units)):
             if unit == 'rad/s':
                 text = '=  %.3f' % val + ' ' + unit
@@ -98,8 +112,8 @@ class LatexWindow:
 
             label_width = label.get_width()
             label_height = label.get_height()
-            pos_x = int((self.symbol_pos[i][0]+0.08) * w)
-            pos_y = int((self.symbol_pos[i][1]+0.02) * h + label_height / 2)
+            pos_x = int((self.symbol_pos[i][0] + 0.08) * w)
+            pos_y = int((self.symbol_pos[i][1] + 0.02) * h + label_height / 2)
             pos = (pos_x, pos_y)
 
             self.surface_updating.blit(label, pos)

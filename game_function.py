@@ -58,6 +58,30 @@ def check_keydown_event(event, car, large_car):
     check_car_moving(event, car, large_car)
 
 
+def check_car_moving(event, car, large_car):
+    """
+    Note Y-axis is flipped, so left key actually represents turning right
+    car.turning_left and car.turning_right actually represent turning in the
+    original coordinate system (following right-hand rule) before flipping.
+    In the flipped coordinate system, they are opposite.
+    """
+    if event.key == pygame.K_UP:
+        car.moving_fwd = True
+        large_car.moving_fwd = True
+    elif event.key == pygame.K_DOWN:
+        car.moving_bwd = True
+        large_car.moving_bwd = True
+    elif event.key == pygame.K_RIGHT:  # turn left
+        car.turning_left = True
+        large_car.turning_left = True
+    elif event.key == pygame.K_LEFT:   # turn right
+        car.turning_right = True
+        large_car.turning_right = True
+    elif event.key == pygame.K_SPACE:
+        car.brake = True
+        large_car.brake = True
+
+
 def check_keyup_event(event, car, large_car):
     if event.key == pygame.K_UP:
         car.moving_fwd = False
@@ -65,33 +89,15 @@ def check_keyup_event(event, car, large_car):
     elif event.key == pygame.K_DOWN:
         car.moving_bwd = False
         large_car.moving_bwd = False
-    elif event.key == pygame.K_LEFT:
+    elif event.key == pygame.K_RIGHT:
         car.turning_left = False
         large_car.turning_left = False
-    elif event.key == pygame.K_RIGHT:
+    elif event.key == pygame.K_LEFT:
         car.turning_right = False
         large_car.turning_right = False
     elif event.key == pygame.K_SPACE:
         car.brake = False
         large_car.brake = False
-
-
-def check_car_moving(event, car, large_car):
-    if event.key == pygame.K_UP:
-        car.moving_fwd = True
-        large_car.moving_fwd = True
-    elif event.key == pygame.K_DOWN:
-        car.moving_bwd = True
-        large_car.moving_bwd = True
-    elif event.key == pygame.K_LEFT:
-        car.turning_left = True
-        large_car.turning_left = True
-    elif event.key == pygame.K_RIGHT:
-        car.turning_right = True
-        large_car.turning_right = True
-    elif event.key == pygame.K_SPACE:
-        car.brake = True
-        large_car.brake = True
 
 
 def update_screen(settings, screen1, screen2,

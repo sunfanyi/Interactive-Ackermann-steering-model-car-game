@@ -15,26 +15,12 @@ class Button:
         # self.screen_rect = self.screen.get_rect()
 
         self.width, self.height = 25, 25
-        self.button_color = (100, 100, 100)
+        self.button_color = (0, 0, 255)
         self.text_color = (255, 255, 255)
-
         self.font = pygame.font.SysFont(None, 30)
 
         self.rect = pygame.Rect(0, 0, self.width, self.height)
-        if msg == '+':
-            self.settings.zoom_region['topleft']
-            x = self.settings.zoom_region['topleft'][0] + 0.3*self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
-        elif msg == '-':
-            x = self.settings.zoom_region['topleft'][0] + self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
-        elif msg == 'R':
-            x = self.settings.zoom_region['topleft'][0] + 1.7*self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
-        else:
-            raise ValueError('Undefined button message.')
-
-        self.rect.center = (x, y)
+        self.rect.center = self.screen.get_rect().center
 
         self.prep_msg(msg)
 
@@ -48,3 +34,24 @@ class Button:
     def draw_button(self):
         self.screen.fill(self.button_color, self.rect)
         self.screen.blit(self.msg_image, self.msg_image_rect)
+
+
+class ZoomButton(Button):
+    def __init__(self, settings, screen, msg):
+        super().__init__(settings, screen, msg)
+
+        self.button_color = (100, 100, 100)
+        if msg == '+':
+            x = self.settings.zoom_region['topleft'][0] + 0.3*self.settings.zoom_region['radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
+        elif msg == '-':
+            x = self.settings.zoom_region['topleft'][0] + self.settings.zoom_region['radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
+        elif msg == 'R':
+            x = self.settings.zoom_region['topleft'][0] + 1.7*self.settings.zoom_region['radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
+        else:
+            raise ValueError('Undefined button message.')
+
+        self.rect.center = (x, y)
+        self.prep_msg(msg)
