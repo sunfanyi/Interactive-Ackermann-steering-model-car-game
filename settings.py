@@ -73,6 +73,14 @@ class Settings:
             'path': 'Figures/steering_wheel.png',
         }
 
+        # latex region
+        self.latex_region = {
+            'topleft': (850, 0),
+            'w': 400,
+            'h': 250,
+            'bg_color': (255, 255, 255),
+        }
+
         # Car settings:
         acceleration = 0.08
         self.car = {

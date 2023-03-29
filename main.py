@@ -13,6 +13,7 @@ from workspace import Workspace
 from car import Car, LargeCar
 from settings import Settings
 from button import Button
+from latex_window import LatexWindow
 
 
 def run_game():
@@ -24,35 +25,51 @@ def run_game():
 
     # screen.fill((255, 255, 255))
 
-    # screen1 = pygame.Surface((settings.map_screen['w'],
-    #                           settings.map_screen['h']),
-    #                          pygame.SRCALPHA)
-    # screen2 = pygame.Surface((settings.steering_wheel['w'],
-    #                           settings.steering_wheel['h']),
-    #                          pygame.SRCALPHA)
-    screen1 = screen
+    screen1 = pygame.Surface((settings.map_screen['w'],
+                              settings.map_screen['h']),
+                             pygame.SRCALPHA)
+    screen2 = pygame.Surface((settings.latex_region['w'],
+                              settings.latex_region['h']),
+                             pygame.SRCALPHA)
+    # screen1 = screen
     my_car = Car(settings, screen1)
 
     my_large_car = LargeCar(settings, screen1)
     workspace = Workspace(settings, screen1, my_car)
     zoom_buttons = [Button(settings, screen1, label)
                     for label in ['+', '-', 'R']]
+    latex_window = LatexWindow(settings, screen2, my_car)
 
+    avg = 0
     i = 0
     while True:
+        start = time.time()
+        screen.fill((255, 255, 255))
         gf.check_event(settings, my_car, my_large_car, zoom_buttons)
 
         my_car.update()
 
         my_large_car.update_zoomed_map(my_car.car_orientation,
                                        my_car.wheels_orientation)
-        gf.update_screen(settings, screen1,
-                         workspace, my_car, my_large_car, zoom_buttons, i)
+        latex_window.update()
 
-        # screen.blit(screen1, settings.map_screen['topleft'])
+        gf.update_screen(settings, screen1, screen2,
+                         workspace, my_car, my_large_car, zoom_buttons, latex_window, i)
+
+        screen.blit(screen1, settings.map_screen['topleft'])
+        screen.blit(screen2, settings.latex_region['topleft'])
         pygame.display.update()
 
         i += 1
+        if i == 1000:
+            i = 1
+            for j in range(10):
+                print('reset')
+        end = time.time()
+        last = avg
+        new = end - start
+        avg = (last*(i-1) + new)/i
+        print('average time interval: ', avg)
         # print('next')
         # time.sleep(1)
 

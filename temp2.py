@@ -1,14 +1,38 @@
-# Constants
-A_vel = 3.6  # car length
-B_vel = 2.6
-C_val = 1.5
-l_val = 2
-r_val = 0.6
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import pygame
+import io
 
-phi_RL_val = 0.01
-phi_RR_val = 0.02
+class LatexWindow:
+    def __init__(self, settings, screen):
+        self.settings = settings
+        self.screen = screen
 
-theta_val = sp.pi/4
+        fig = plt.figure(figsize=(6, 4), dpi=10)
+        fig.patch.set_visible(False)
+        self.ax = fig.add_axes([0, 0, 1, 1])
+        self.ax.axis('off')
 
-values = {A: A_vel, B: B_vel, C: C_val, l: l_val, r: r_val,
-          phi_RL: phi_RL_val, phi_RR: phi_RR_val, theta: theta_val}
+        self.cache = {}
+        self.fig_surface = None
+        self.update('Hello, world!')
+
+    def update(self, text):
+        if text in self.cache:
+            self.fig_surface = self.cache[text]
+        else:
+            self.ax.clear()
+            self.ax.axis('off')
+            self.ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=36)
+
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=10, bbox_inches='tight', pad_inches=0)
+            buf.seek(0)
+
+            fig_surface = pygame.image.load(buf)
+            self.cache[text] = fig_surface
+            self.fig_surface = fig_surface
+
+    def draw(self):
+        self.screen.blit(self.fig_surface, (0, 0))

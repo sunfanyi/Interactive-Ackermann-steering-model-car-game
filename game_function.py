@@ -94,8 +94,8 @@ def check_car_moving(event, car, large_car):
         large_car.brake = True
 
 
-def update_screen(settings, screen1,
-                  workspace, car, large_car, zoom_buttons, i):
+def update_screen(settings, screen1, screen2,
+                  workspace, car, large_car, zoom_buttons, latex_window, i):
     # global x_factor
     # global y_factor
     # global z_factor
@@ -106,10 +106,12 @@ def update_screen(settings, screen1,
     # z_factor = settings.z_factor
     # origin2d = settings.origin2d
     screen1.fill(settings.map_screen['bg_color'])
+    screen2.fill(settings.map_screen['bg_color'])
 
     workspace.draw()
     car.draw()
     large_car.draw()
+    latex_window.draw()
     # zoomed_screen = pygame.transform.smoothscale(screen, (800-i, 600-i))
     # screen.blit(zoomed_screen, ((800-i)//2, (600-i)//2))
 
