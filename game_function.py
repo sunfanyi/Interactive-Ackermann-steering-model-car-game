@@ -106,7 +106,7 @@ def update_screen(settings, screen1, screen2,
     # z_factor = settings.z_factor
     # origin2d = settings.origin2d
     screen1.fill(settings.map_screen['bg_color'])
-    screen2.fill(settings.map_screen['bg_color'])
+    screen2.fill(settings.latex_region['bg_color'])
 
     workspace.draw()
     car.draw()

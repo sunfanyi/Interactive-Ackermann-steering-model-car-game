@@ -60,17 +60,15 @@ def run_game():
         screen.blit(screen2, settings.latex_region['topleft'])
         pygame.display.update()
 
-        i += 1
-        if i == 1000:
-            i = 1
-            for j in range(10):
-                print('reset')
-        end = time.time()
-        last = avg
-        new = end - start
-        avg = (last*(i-1) + new)/i
-        print('average time interval: ', avg)
-        # print('next')
-        # time.sleep(1)
+        # i += 1
+        # if i == 1000:
+        #     i = 1
+        #     for j in range(10):
+        #         print('reset')
+        # end = time.time()
+        # last = avg
+        # new = end - start
+        # avg = (last*(i-1) + new)/i
+        # print('average time interval: ', avg)
 
 run_game()

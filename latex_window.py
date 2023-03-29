@@ -13,42 +13,6 @@ import pygame
 import numpy as np
 import io
 
-
-# class LatexWindow:
-#     def __init__(self, settings, screen, car):
-#         self.settings = settings
-#         self.screen = screen
-#
-#         self.font = pygame.font.SysFont(None, 36)
-#
-#         self.symbols_surface = None
-#         self.values_surface = None
-#
-#         self.render_symbols()
-#         # self.update()
-#
-#     def render_symbols(self):
-#         self.symbols_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA, 32)
-#         self.symbols_surface = self.symbols_surface.convert_alpha()
-#
-#         symbol_text = "a =\nb =\nc ="
-#         text_surface = self.font.render(symbol_text, True, (255, 255, 255))
-#         self.symbols_surface.blit(text_surface, (20, 20))
-#
-#     def update(self, values=1):
-#         values = {"a": 0, "b": 0, "c": 0}
-#         self.values_surface = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA, 32)
-#         self.values_surface = self.values_surface.convert_alpha()
-#
-#         values_text = f"{values['a']}\n{values['b']}\n{values['c']}"
-#         text_surface = self.font.render(values_text, True, (255, 255, 255))
-#         self.values_surface.blit(text_surface, (60, 20))
-#
-#     def draw(self):
-#         self.screen.blit(self.symbols_surface, (0, 0))
-#         self.screen.blit(self.values_surface, (0, 0))
-
-
 class LatexWindow:
     def __init__(self, settings, screen, car):
         self.settings = settings
@@ -64,17 +28,21 @@ class LatexWindow:
         text_center_aligned = {
             '$V$': (x_left, 1 / 8),
             '$\\dot{\\psi}$': (x_left, 2 / 8),
-            '$\\beta_{FL}$': (x_left, 4 / 8),
-            '$\\dot{\\phi_{FL}}$': (x_left, 5 / 8),
-            '$\\dot{\\phi_{RL}}$': (x_left, 6 / 8),
 
             '$\\dot{X}$': (x_right, 0.2 * 0.4),
             '$\\dot{Y}$': (x_right, 0.45 * 0.4),
             '$\\dot{\\theta}$': (x_right, 0.7 * 0.4),
+
+            '$\\beta_{FL}$': (x_left, 4 / 8),
+            '$\\dot{\\phi_{FL}}$': (x_left, 5 / 8),
+            '$\\dot{\\phi_{RL}}$': (x_left, 6 / 8),
+
             '$\\beta_{FR}$': (x_right, 4 / 8),
             '$\\dot{\\phi_{FR}}$': (x_right, 5 / 8),
             '$\\dot{\\phi_{RR}}$': (x_right, 6 / 8)
         }
+
+        self.symbol_pos = list(text_center_aligned.values())
 
         text_left_aligned = {
             'Inputs:': (0, 0),
@@ -82,7 +50,7 @@ class LatexWindow:
         }
         # adjust ratio to change figsize, fontsize, DPI to maximise speed
         ratio = 10
-        fig = plt.figure(figsize=(20 * ratio, 20 * ratio))
+        fig = plt.figure(figsize=(22 * ratio, 20 * ratio))
         fig.patch.set_visible(False)
         ax = fig.add_axes([0, 0, 1, 1])
         ax.axis('off')
@@ -104,24 +72,38 @@ class LatexWindow:
         #                                                self.settings.latex_region['h']))
 
     def update(self):
-        return
-        # text = '$\\theta$ + %.2f' % 1
-        # if text in self.cache:
-        #     return
-        #     # self.fig_surface = self.cache[text]
-        # else:
-        #     print('update')
-        #     self.ax.clear()
-        #     self.ax.axis('off')
-        #     self.ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=36)
-        #
-        #     buf = io.BytesIO()
-        #     plt.savefig(buf, format='png', dpi=80, bbox_inches='tight', pad_inches=0)
-        #     buf.seek(0)
-        #
-        #     fig_surface = pygame.image.load(buf)
-        #     self.cache[text] = fig_surface
-        #     self.fig_surface = fig_surface
+        self.surface_updating = pygame.Surface((self.settings.latex_region['w'],
+                                  self.settings.latex_region['h']),
+                                 pygame.SRCALPHA)
+        values = [self.car.car_speed, self.car.P_i_dot[3],
+                  self.car.P_i_dot[0], self.car.P_i_dot[1], self.car.P_i_dot[2],
+                  self.car.wheels_orientation[0] * 180 / np.pi,
+                  self.car.wheels_speed[0], self.car.wheels_speed[2],
+                  self.car.wheels_orientation[1] * 180 / np.pi,
+                  self.car.wheels_speed[1], self.car.wheels_speed[3]]
+        units = ['m/s', 'rad/s', 'm/s', 'm/s', 'rad/s',
+                 'deg', 'rad/s', 'rad/s', 'deg', 'rad/s', 'rad/s']
+
+        font = pygame.font.Font(None, 24)
+        rect = self.surface_rendered.get_rect()
+        w = rect.width
+        h = rect.height
+        print(w, h)
+        for i, (val, unit) in enumerate(zip(values, units)):
+            if unit == 'rad/s':
+                text = '=  %.3f' % val + ' ' + unit
+            else:
+                text = '=  %.2f' % val + ' ' + unit
+            label = font.render(text, True, (0, 0, 0))
+
+            label_width = label.get_width()
+            label_height = label.get_height()
+            pos_x = int((self.symbol_pos[i][0]+0.08) * w)
+            pos_y = int((self.symbol_pos[i][1]+0.02) * h + label_height / 2)
+            pos = (pos_x, pos_y)
+
+            self.surface_updating.blit(label, pos)
 
     def draw(self):
         self.screen.blit(self.surface_rendered, (0, 0))
+        self.screen.blit(self.surface_updating, (0, 0))
