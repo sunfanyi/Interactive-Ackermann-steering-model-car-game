@@ -1,38 +1,46 @@
+import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.path import Path
+import game_function as gf
 
-# Define the four points
-x = [1, 2, 3, 2]
-y = [1, 2, 1, 0]
+img = cv2.imread('Figures/CWMap.jpg')
 
-# Create a numpy array with the x and y coordinates of the points
-pts = np.array([x, y]).T
 
-# Create a closed path from the points
-path = Path(pts, closed=True)
+R = gf.trimetric_view()
+# R = np.eye(3)
+R = gf.rotation(np.pi/4, 'x')
 
-# Get the boundary polygon from the path
-boundary = path.to_polygons()[0]
+img = img.astype(np.uint8)
 
-# Create a grid of coordinates for the mask image
-x_coords = np.arange(np.min(x), np.max(x)+1)
-y_coords = np.arange(np.min(y), np.max(y)+1)
-xx, yy = np.meshgrid(x_coords, y_coords)
-coords = np.vstack((xx.ravel(), yy.ravel())).T
 
-# Create an empty mask array
-mask = np.zeros((len(y_coords), len(x_coords)))
+img = cv2.resize(img, (800, 600),
+                 interpolation=cv2.INTER_LINEAR)
+# Apply the transformation matrix to the image
+# transformed_img = cv2.warpAffine(img, M, (img.shape[1], img.shape[0]))
+img = cv2.warpPerspective(img, R, (img.shape[1], img.shape[0]))
 
-# Loop over the boundary lines and set mask values to 1
-for i in range(len(boundary)-1):
-    x0, y0 = boundary[i]
-    x1, y1 = boundary[i+1]
-    mask[int(y0), int(x0):int(x1)+1] = 1
-    mask[int(y1), int(x0):int(x1)+1] = 1
-    mask[int(y0):int(y1)+1, int(x0)] = 1
-    mask[int(y0):int(y1)+1, int(x1)] = 1
+# show image
+cv2.imshow('image', img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
-# Plot the mask image
-plt.imshow(mask, extent=[np.min(x), np.max(x), np.min(y), np.max(y)], cmap='gray')
-plt.show()
+
+# Define the trimetric projection matrix
+
+#
+# a = np.sqrt(2) / 2
+# proj_matrix = np.array([[a, -a, 0, 0],
+#                         [1/4, 1/4, -a/2, 0],
+#                         [0, 0, 0, 0],
+#                         [0, 0, 0, 1]], dtype=np.float32)
+#
+# proj_matrix = proj_matrix[:3, :3]
+# proj_matrix[2,2] = 1
+# proj_matrix = proj_matrix.astype(np.float32)
+#
+# # Apply the trimetric projection matrix to the image
+# projected_img = cv2.warpPerspective(img.astype(np.uint8), proj_matrix, (img.shape[1], img.shape[0]))
+#
+# # Display the projected image
+# cv2.imshow('Projected Image', projected_img)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()

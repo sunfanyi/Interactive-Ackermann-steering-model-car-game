@@ -8,14 +8,14 @@
 import sys
 import numpy as np
 import pygame
+import time
+
 from settings import Settings
 
 
 my_settings = Settings()
 
-x_factor = my_settings.map_screen['x_factor']
-y_factor = my_settings.map_screen['y_factor']
-z_factor = my_settings.map_screen['z_factor']
+scale_factor = my_settings.map_screen['scale_factor']
 origin2d = my_settings.map_screen['origin2d']
 
 
@@ -103,15 +103,6 @@ def check_keyup_event(event, car, large_car):
 
 def update_screen(settings, screen1, screen2,
                   workspace, car, large_car, zoom_buttons, latex_window, i):
-    # global x_factor
-    # global y_factor
-    # global z_factor
-    # global origin2d
-    # settings.zoom_in()
-    # x_factor = settings.x_factor
-    # y_factor = settings.y_factor
-    # z_factor = settings.z_factor
-    # origin2d = settings.origin2d
     screen1.fill(settings.map_screen['bg_color'])
     screen2.fill(settings.latex_region['bg_color'])
 
@@ -122,30 +113,14 @@ def update_screen(settings, screen1, screen2,
 
     font = pygame.font.Font(None, 38)
     X = font.render('x', True, (0, 0, 0))
-    # Calculate the center-aligned position
     text_width, text_height = X.get_size()
     pos = car.pos
-    pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
-    screen1.blit(X, pos)
-
-
-    pos = point_3d_to_2d(1000, 0, 0)
-    text_width, text_height = X.get_size()
-    pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
-    screen1.blit(X, pos)
-
-    pos = (700, 100)
-    X = font.render('x', True, (255, 0, 0))
-    text_width, text_height = X.get_size()
     pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
     screen1.blit(X, pos)
 
     for button in zoom_buttons:
         button.draw_button()
 
-
-
-import time
 
 def detect_collision(screen, car, red_line):
     # get 2d corner points
@@ -154,17 +129,7 @@ def detect_collision(screen, car, red_line):
     x3, y3 = (car.body_lines[3][0][:2]).astype(int)  # RL
     x4, y4 = (car.body_lines[2][0][:2]).astype(int)  # RR
 
-    print(x1, y1)
-    print(x2, y2)
-    print(x3, y3)
-    print(x4, y4)
-    print(car.car_orientation)
     if red_line[y1, x1] or red_line[y2, x2] or red_line[y3, x3] or red_line[y4, x4]:
-        print(car.car_origin3d)
-        print(x1, y1)
-        print(x2, y2)
-        print(x3, y3)
-        print(x4, y4)
         car.car_origin3d = np.float32([1400.4116, 1086.3021, car.wheel_radius])
         car.car_speed = 0
         if red_line[y1, x1]:
@@ -183,12 +148,10 @@ def detect_collision(screen, car, red_line):
             pos = point_3d_to_2d(x4, y4, 0)
             print('RR')
             print(x4, y4)
-        print(pos)
         car.pos = pos
         # pygame.draw.circle(screen, (0, 0, 0), pos, 20)
 
         print('collision detected' + str(np.random.rand(1)))
-        # pygame.display.update()
         time.sleep(3)
 
 
@@ -272,7 +235,7 @@ def trimetric_view():
     z_rotation = rotation(-15 / 180 * np.pi, 'z')
 
     R_trimetic = np.matmul(x_rotation, z_rotation)
-    R_trimetic = np.eye(3)
+    # R_trimetic = np.eye(3)
     return R_trimetic
 
 
@@ -292,9 +255,9 @@ def point_3d_to_2d(x, y, z, R=trimetric_view(), offset=origin2d):
     # flip y-axis for visualisation,
     # so anticlockwise becomes negative and clockwise becomes positive
     y = - y
-    x *= x_factor
-    y *= y_factor
-    z *= z_factor
+    x *= scale_factor
+    y *= scale_factor
+    z *= scale_factor
 
     x_2d, y_2d, z_2d = np.matmul(R, np.array([x, y, z]))
 

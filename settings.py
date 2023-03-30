@@ -43,35 +43,25 @@ class Settings:
             'z_tick_interval': 500,  # tick label interval for Z-axes
 
             # Scaling factors for plotting:
-            # for x: 800 = screen length, 5000 = image length, 1.6 = scale factor (reduce to make larger)
-            # 'x_factor': 800 / 5224 / 1.4,
-            # 'y_factor': 600 / 3680 / 1.4,
-            'x_factor': 0.1,
-            'y_factor': 0.1,
-            'z_factor': 0.1,
+            'scale_factor': 0.15,
         }
 
         # zoom in region:
-        zoom_radius = 200
         self.initial_zoom_in_factor = 2
         self.zoom_region = {
-            # 'topleft': (map_screen_width - 10 - 2 * zoom_radius, 0),
             'topleft': (600, 0),
-            'w': 200,
-            'h': 200,
-            'zoom_radius': zoom_radius,
             'window_radius': 100,
             'factor': self.initial_zoom_in_factor,  # dynamic value
             '3d': False,
-            # 'car_fixed': True,
+            'car_fixed': True,
             # '3d': True,
-            'car_fixed': False,
-            'edge': True
+            # 'car_fixed': False,
+            'edge': True,
+            'debug_frame': True
         }
 
         # steering wheel region:
         self.steering_wheel = {
-            # 'topleft': (1000, 300),
             'topleft': (450, 40),
             'w': 100,
             'h': 100,

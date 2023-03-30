@@ -294,7 +294,7 @@ class Car:
 
 class LargeCar(Car):
     def __init__(self, settings, screen, scale=40):
-        zoomed_scale = scale / settings.map_screen['x_factor'] / settings.zoom_region['factor']
+        zoomed_scale = scale * settings.zoom_region['factor']
         super().__init__(settings, screen, zoomed_scale)
         self.car_origin3d = np.float32([0, 0, 0])
 
@@ -304,8 +304,8 @@ class LargeCar(Car):
             self.R_view = np.eye(3)
 
         topleft = self.settings.zoom_region['topleft']
-        self.offset = (topleft[0] + self.settings.zoom_region['w']/2,
-                       topleft[1] + self.settings.zoom_region['h']/2)
+        self.offset = (topleft[0] + self.settings.zoom_region['window_radius'],
+                       topleft[1] + self.settings.zoom_region['window_radius'])
 
     def update_zoomed_map(self, car_orientation, wheels_orientation):
         if self.settings.zoom_region['car_fixed']:
