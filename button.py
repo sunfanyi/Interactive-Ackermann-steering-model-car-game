@@ -42,14 +42,14 @@ class ZoomButton(Button):
 
         self.button_color = (100, 100, 100)
         if msg == '+':
-            x = self.settings.zoom_region['topleft'][0] + 0.3*self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
+            x = self.settings.zoom_region['topleft'][0] + 0.3*self.settings.zoom_region['window_radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['window_radius']
         elif msg == '-':
-            x = self.settings.zoom_region['topleft'][0] + self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
+            x = self.settings.zoom_region['topleft'][0] + self.settings.zoom_region['window_radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['window_radius']
         elif msg == 'R':
-            x = self.settings.zoom_region['topleft'][0] + 1.7*self.settings.zoom_region['radius']
-            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['radius']
+            x = self.settings.zoom_region['topleft'][0] + 1.7*self.settings.zoom_region['window_radius']
+            y = self.settings.zoom_region['topleft'][1] + 2.2*self.settings.zoom_region['window_radius']
         else:
             raise ValueError('Undefined button message.')
 

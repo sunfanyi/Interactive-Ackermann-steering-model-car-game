@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 def extract_color(img, color):
     # Convert to HSV
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
     if color == 'R':
         lower_red = np.array([0, 180, 50])
@@ -40,11 +40,12 @@ def extract_color(img, color):
     result[mask == 0, :] = [0, 0, 0]
     #     result[mask!=0, :] = [255, 255, 255]
 
-    # apply opening to remove noise
-    kernel = np.ones((5, 5), np.uint8)
-    result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
+    # # apply opening to remove noise
+    # kernel = np.ones((5, 5), np.uint8)
+    # result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
 
-    return result
+    mask = (mask == 255)
+    return result, mask
 
 
 def mask2xy(img_mask):

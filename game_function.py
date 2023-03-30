@@ -10,6 +10,7 @@ import numpy as np
 import pygame
 from settings import Settings
 
+
 my_settings = Settings()
 
 x_factor = my_settings.map_screen['x_factor']
@@ -118,11 +119,77 @@ def update_screen(settings, screen1, screen2,
     car.draw()
     large_car.draw()
     latex_window.draw()
-    # zoomed_screen = pygame.transform.smoothscale(screen, (800-i, 600-i))
-    # screen.blit(zoomed_screen, ((800-i)//2, (600-i)//2))
+
+    font = pygame.font.Font(None, 38)
+    X = font.render('x', True, (0, 0, 0))
+    # Calculate the center-aligned position
+    text_width, text_height = X.get_size()
+    pos = car.pos
+    pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
+    screen1.blit(X, pos)
+
+
+    pos = point_3d_to_2d(1000, 0, 0)
+    text_width, text_height = X.get_size()
+    pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
+    screen1.blit(X, pos)
+
+    pos = (700, 100)
+    X = font.render('x', True, (255, 0, 0))
+    text_width, text_height = X.get_size()
+    pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
+    screen1.blit(X, pos)
 
     for button in zoom_buttons:
         button.draw_button()
+
+
+
+import time
+
+def detect_collision(screen, car, red_line):
+    # get 2d corner points
+    x1, y1 = (car.body_lines[0][0][:2]).astype(int)  # FL
+    x2, y2 = (car.body_lines[1][0][:2]).astype(int)  # FR
+    x3, y3 = (car.body_lines[3][0][:2]).astype(int)  # RL
+    x4, y4 = (car.body_lines[2][0][:2]).astype(int)  # RR
+
+    print(x1, y1)
+    print(x2, y2)
+    print(x3, y3)
+    print(x4, y4)
+    print(car.car_orientation)
+    if red_line[y1, x1] or red_line[y2, x2] or red_line[y3, x3] or red_line[y4, x4]:
+        print(car.car_origin3d)
+        print(x1, y1)
+        print(x2, y2)
+        print(x3, y3)
+        print(x4, y4)
+        car.car_origin3d = np.float32([1400.4116, 1086.3021, car.wheel_radius])
+        car.car_speed = 0
+        if red_line[y1, x1]:
+            pos = point_3d_to_2d(x1, y1, 0)
+            print('FL')
+            print(x1, y1)
+        if red_line[y2, x2]:
+            pos = point_3d_to_2d(x2, y2, 0)
+            print('FR')
+            print(x2, y2)
+        if red_line[y3, x3]:
+            pos = point_3d_to_2d(x3, y3, 0)
+            print('RL')
+            print(x3, y3)
+        if red_line[y4, x4]:
+            pos = point_3d_to_2d(x4, y4, 0)
+            print('RR')
+            print(x4, y4)
+        print(pos)
+        car.pos = pos
+        # pygame.draw.circle(screen, (0, 0, 0), pos, 20)
+
+        print('collision detected' + str(np.random.rand(1)))
+        # pygame.display.update()
+        time.sleep(3)
 
 
 def rotation(theta, direction):
@@ -205,6 +272,7 @@ def trimetric_view():
     z_rotation = rotation(-15 / 180 * np.pi, 'z')
 
     R_trimetic = np.matmul(x_rotation, z_rotation)
+    R_trimetic = np.eye(3)
     return R_trimetic
 
 
@@ -241,5 +309,4 @@ def cv2_to_pygame(image):
     image = np.rot90(image)
     return image
 
-def inverse_kinematics(car):
-    print(car)
+

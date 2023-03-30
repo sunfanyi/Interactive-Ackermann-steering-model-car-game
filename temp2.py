@@ -1,38 +1,45 @@
-import matplotlib
-matplotlib.use('Agg')
+import numpy as np
+import cv2
 import matplotlib.pyplot as plt
-import pygame
-import io
 
-class LatexWindow:
-    def __init__(self, settings, screen):
-        self.settings = settings
-        self.screen = screen
+from tools_cv import *
 
-        fig = plt.figure(figsize=(6, 4), dpi=10)
-        fig.patch.set_visible(False)
-        self.ax = fig.add_axes([0, 0, 1, 1])
-        self.ax.axis('off')
 
-        self.cache = {}
-        self.fig_surface = None
-        self.update('Hello, world!')
 
-    def update(self, text):
-        if text in self.cache:
-            self.fig_surface = self.cache[text]
-        else:
-            self.ax.clear()
-            self.ax.axis('off')
-            self.ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=36)
+img = cv2.imread('Figures/CWMap.jpg')  # BGR
+img_R, mask = extract_color(img, 'R')
+# img_G = extract_color(img, 'G')
+# img_B = extract_color(img, 'B')
 
-            buf = io.BytesIO()
-            plt.savefig(buf, format='png', dpi=10, bbox_inches='tight', pad_inches=0)
-            buf.seek(0)
+show_img(img_R)
+show_img(mask)
+# show_img(img_G)
+# show_img(img_B)
+# show_img(img_R + img_G + img_B)
 
-            fig_surface = pygame.image.load(buf)
-            self.cache[text] = fig_surface
-            self.fig_surface = fig_surface
+R_coords = mask2xy(img_R)
+# G_coords = mask2xy(img_G)
+# B_coords = mask2xy(img_B)
 
-    def draw(self):
-        self.screen.blit(self.fig_surface, (0, 0))
+plt.scatter(R_coords[:, 0], R_coords[:, 1], c='r', s=0.1, linewidth=0.1)
+# plt.scatter(G_coords[:, 0], G_coords[:, 1], c='g', s=0.1, linewidth=0.1)
+# plt.scatter(B_coords[:, 0], B_coords[:, 1], c='b', s=0.1, linewidth=0.1)
+plt.xlim([0, img.shape[1]])
+plt.ylim([img.shape[0], 0])
+plt.show()
+
+for point in R_coords:
+    x = point[0]
+    y = point[1]
+    count = 0
+    if mask[x+1, y] != [0, 0, 0]:
+        count += 1
+    if mask[x-1, y] != [0, 0, 0]:
+        count += 1
+    if mask[x, y+1] != [0, 0, 0]:
+        count += 1
+    if mask[x, y-1] != [0, 0, 0]:
+        count += 1
+    if count == 1:
+        print(x, y)
+

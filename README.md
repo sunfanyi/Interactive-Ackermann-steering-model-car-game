@@ -1,3 +1,5 @@
-2023.03.29
+2023.03.30
 
-![](Figures/2023_03_29.png)
+Messy debugging version
+
+![](Figures/2023_03_30_1_debug.png)

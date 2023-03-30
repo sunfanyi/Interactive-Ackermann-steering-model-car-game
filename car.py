@@ -22,7 +22,7 @@ class Car:
         self.settings = settings
         self.screen = screen
         self.scale = scale
-
+        self.pos = (0, 0)
         self.reset_dimensions()
 
         # indicator of how many cycles the wheels have turned
@@ -33,9 +33,9 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # State properties
-        self.car_origin3d = np.float32([0., 0., 0.])
+        self.car_origin3d = np.float32([1453.9377, 1054.2294, self.wheel_radius])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-        self.car_orientation = 0  # theta, in radians
+        self.car_orientation = -0.5398258281984467  # theta, in radians
         self.steering_angle = 0   # psi, in radians
         # negligible initial V, otherwise ICR = nan at the beginning
         # beta will be zero even with steering when game starts until assign a speed
@@ -59,6 +59,8 @@ class Car:
         self.turning_right = False
         self.brake = False
 
+        self.apply_transformations()
+
     def reset_dimensions(self):
         self.length = 3.6 * self.scale
         self.width = 2.6 * self.scale
@@ -80,14 +82,15 @@ class Car:
         each list contains two arrays of line segments
         """
         # corner points of the cuboid
-        top_front_left = np.array([self.length / 2, self.width / 2, 0])
-        top_front_right = np.array([self.length / 2, -self.width / 2, 0])
-        top_rear_left = np.array([-self.length / 2, self.width / 2, 0])
-        top_rear_right = np.array([-self.length / 2, -self.width / 2, 0])
-        bot_front_left = np.array([self.length / 2, self.width / 2, self.height])
-        bot_front_right = np.array([self.length / 2, -self.width / 2, self.height])
-        bot_rear_left = np.array([-self.length / 2, self.width / 2, self.height])
-        bot_rear_right = np.array([-self.length / 2, -self.width / 2, self.height])
+
+        top_front_left = np.array([self.length / 2, self.width / 2, self.height])
+        top_front_right = np.array([self.length / 2, -self.width / 2, self.height])
+        top_rear_left = np.array([-self.length / 2, self.width / 2, self.height])
+        top_rear_right = np.array([-self.length / 2, -self.width / 2, self.height])
+        bot_front_left = np.array([self.length / 2, self.width / 2, 0])
+        bot_front_right = np.array([self.length / 2, -self.width / 2, 0])
+        bot_rear_left = np.array([-self.length / 2, self.width / 2, 0])
+        bot_rear_right = np.array([-self.length / 2, -self.width / 2, 0])
 
         # line segments for the car body
         self.body_lines_local = [
@@ -110,10 +113,10 @@ class Car:
         y_shift = np.array([0, self.wheel_width / 2, 0])
         z_shift = np.array([0, 0, -self.wheel_offset])
 
-        self.wheel_centers_local = np.array([top_front_left - x_shift + z_shift,
-                                             top_front_right - x_shift + z_shift,
-                                             top_rear_left + x_shift + z_shift,
-                                             top_rear_right + x_shift + z_shift])
+        self.wheel_centers_local = np.array([bot_front_left - x_shift + z_shift,
+                                             bot_front_right - x_shift + z_shift,
+                                             bot_rear_left + x_shift + z_shift,
+                                             bot_rear_right + x_shift + z_shift])
 
         def get_each_wheel(center, y_shift, num_points=20):
             r = self.wheel_radius
@@ -291,9 +294,9 @@ class Car:
 
 class LargeCar(Car):
     def __init__(self, settings, screen, scale=40):
-        zoomed_scale = scale * settings.zoom_region['factor']
+        zoomed_scale = scale / settings.map_screen['x_factor'] / settings.zoom_region['factor']
         super().__init__(settings, screen, zoomed_scale)
-        self.car_origin3d = np.array([0, 0, 0])
+        self.car_origin3d = np.float32([0, 0, 0])
 
         if self.settings.zoom_region['3d']:  # trimetric view
             self.R_view = gf.trimetric_view()

@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import matplotlib
+
 # non-interactive backend to optimise speed
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -20,10 +21,11 @@ class LatexWindow:
         self.screen = screen
         self.car = car
 
-        self.render_symbols()
+        self.get_surf_latex()
+        self.get_surf_units()
 
-    def render_symbols(self):
-        x_left = 0.2
+    def get_surf_latex(self):
+        x_left = 0.1
         x_right = 0.9
         text_center_aligned = {
             '$V$': (x_left, 1 / 8),
@@ -56,18 +58,43 @@ class LatexWindow:
         ax = fig.add_axes([0, 0, 1, 1])
         ax.axis('off')
 
-        for key, value in text_left_aligned.items():
-            ax.text(value[0], 0.95 - value[1], key, ha='left', va='top', fontsize=108 * ratio)
-
         for key, value in text_center_aligned.items():
             ax.text(value[0], 0.95 - value[1], key, ha='center', va='top', fontsize=108 * ratio)
+
+        for key, value in text_left_aligned.items():
+            ax.text(value[0], 0.95 - value[1], key, ha='left', va='top', fontsize=108 * ratio)
 
         # in-memory buffer
         buf = io.BytesIO()
         plt.savefig(buf, format='png', dpi=10 // ratio, bbox_inches='tight', pad_inches=0)
         buf.seek(0)
 
-        self.surface_rendered = pygame.image.load(buf)
+        self.surf_latex = pygame.image.load(buf)
+
+    def get_surf_units(self):
+        self.surf_units = pygame.Surface((self.settings.latex_region['w'],
+                                          self.settings.latex_region['h']),
+                                         pygame.SRCALPHA)
+
+        units = ['m/s', 'rad/s', 'm/s', 'm/s', 'rad/s',
+                 'deg', 'rad/s', 'rad/s', 'deg', 'rad/s', 'rad/s']
+
+        font = pygame.font.Font(None, 24)
+        rect = self.surf_latex.get_rect()
+        w = rect.width
+        h = rect.height
+        for i, unit in enumerate(units):
+            text = unit
+
+            label = font.render(text, True, (0, 0, 0))
+
+            label_width = label.get_width()
+            label_height = label.get_height()
+            pos_x = int((self.symbol_pos[i][0] + 0.41) * w)
+            pos_y = int((self.symbol_pos[i][1] + 0.02) * h + label_height / 2)
+            pos = (pos_x, pos_y)
+
+            self.surf_units.blit(label, pos)
 
     def update(self):
         """
@@ -77,9 +104,9 @@ class LatexWindow:
             2. Left wheels become right wheels, and vice versa.
             3. Wheels' orientation change sign as left turn becomes right turn.
         """
-        self.surface_updating = pygame.Surface((self.settings.latex_region['w'],
-                                                self.settings.latex_region['h']),
-                                               pygame.SRCALPHA)
+        self.surf_updating = pygame.Surface((self.settings.latex_region['w'],
+                                             self.settings.latex_region['h']),
+                                            pygame.SRCALPHA)
 
         values = [self.car.car_speed,  # V
                   -self.car.P_i_dot[3],  # dot_psi
@@ -96,18 +123,16 @@ class LatexWindow:
                   self.car.wheels_speed[0],  # phi_FR dot
                   self.car.wheels_speed[2]]  # phi_RR dot
 
-        units = ['m/s', 'rad/s', 'm/s', 'm/s', 'rad/s',
-                 'deg', 'rad/s', 'rad/s', 'deg', 'rad/s', 'rad/s']
-
         font = pygame.font.Font(None, 24)
-        rect = self.surface_rendered.get_rect()
+        rect = self.surf_latex.get_rect()
         w = rect.width
         h = rect.height
-        for i, (val, unit) in enumerate(zip(values, units)):
-            if unit == 'rad/s':
-                text = '=  %.3f' % val + ' ' + unit
+        decimal_3 = [1, 4, 6, 7, 9, 10]
+        for i, val in enumerate(values):
+            if i in decimal_3:
+                text = '=  %.3f' % val
             else:
-                text = '=  %.2f' % val + ' ' + unit
+                text = '=  %.2f' % val
             label = font.render(text, True, (0, 0, 0))
 
             label_width = label.get_width()
@@ -116,8 +141,9 @@ class LatexWindow:
             pos_y = int((self.symbol_pos[i][1] + 0.02) * h + label_height / 2)
             pos = (pos_x, pos_y)
 
-            self.surface_updating.blit(label, pos)
+            self.surf_updating.blit(label, pos)
 
     def draw(self):
-        self.screen.blit(self.surface_rendered, (0, 0))
-        self.screen.blit(self.surface_updating, (0, 0))
+        self.screen.blit(self.surf_latex, (0, 0))
+        self.screen.blit(self.surf_updating, (0, 0))
+        self.screen.blit(self.surf_units, (0, 0))
