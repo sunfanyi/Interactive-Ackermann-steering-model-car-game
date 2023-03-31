@@ -115,10 +115,10 @@ def detect_collision(game_stats, screen, car, large_car, red_line, restart_butto
         return
 
     # get 3d corner points
-    x1, y1 = (car.body_lines[0][0][:2]).astype(int)  # FL
-    x2, y2 = (car.body_lines[1][0][:2]).astype(int)  # FR
-    x3, y3 = (car.body_lines[3][0][:2]).astype(int)  # RL
-    x4, y4 = (car.body_lines[2][0][:2]).astype(int)  # RR
+    x1, y1 = np.round(car.body_lines[0][0][:2]).astype(np.int32)  # FL
+    x2, y2 = np.round(car.body_lines[1][0][:2]).astype(np.int32)  # FR
+    x3, y3 = np.round(car.body_lines[3][0][:2]).astype(np.int32)  # RL
+    x4, y4 = np.round(car.body_lines[2][0][:2]).astype(np.int32)  # RR
 
     if red_line[y1, x1] or red_line[y2, x2] or red_line[y3, x3] or red_line[y4, x4]:
         if red_line[y1, x1]:
