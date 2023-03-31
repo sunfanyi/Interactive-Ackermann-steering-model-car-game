@@ -18,11 +18,12 @@ class Car:
     so as the car, so the left wheels are actually on the right side from the screen.
     When pressing the left key, the car actually turns right, but flipped on the screen.
     """
-    def __init__(self, settings, screen, scale=40):
+    def __init__(self, settings, screen, game_stats, scale=40):
         self.settings = settings
         self.screen = screen
+        self.game_stats = game_stats
         self.scale = scale
-        self.pos = (0, 0)
+
         self.reset_dimensions()
 
         # indicator of how many cycles the wheels have turned
@@ -33,9 +34,11 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # State properties
-        self.car_origin3d = np.float32([1453.9377, 1054.2294, self.wheel_radius])
+        self.car_origin3d = np.float32([0, 0, self.wheel_radius])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-        self.car_orientation = -0.5398258281984467  # theta, in radians
+        self.last_car_origin3d = self.car_origin3d.copy()
+        self.last_car_origin2d = self.car_origin2d
+        self.car_orientation = 0  # theta, in radians
         self.steering_angle = 0   # psi, in radians
         # negligible initial V, otherwise ICR = nan at the beginning
         # beta will be zero even with steering when game starts until assign a speed
@@ -62,8 +65,8 @@ class Car:
         self.apply_transformations()
 
     def reset_dimensions(self):
-        self.length = 3.6 * self.scale
-        self.width = 2.6 * self.scale
+        self.length = 3.3 * self.scale
+        self.width = 2.2 * self.scale
         self.height = 1.5 * self.scale
         self.wheel_radius = 0.6 * self.scale
         self.wheel_width = 0.5 * self.scale
@@ -190,8 +193,6 @@ class Car:
             T_CW = np.matmul(T_2, T_1)
             self.T_wheels[i] = np.matmul(self.T_body, T_CW)
 
-        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
-
     def apply_transformations(self):
         self.update_trans_mat()
 
@@ -216,10 +217,15 @@ class Car:
             curve2_universe = np.matmul(self.T_wheels[i], curve2).astype('float')
             self.wheel_curves.append([curve1_universe[:3, :].T, curve2_universe[:3, :].T])
 
+    def step_back(self):
+        self.car_origin3d = self.last_car_origin3d
+        self.car_origin2d = self.last_car_origin2d
+
     def update(self):
         """
         Capture car moving from keyboard input and move the T matrices for car and wheels.
         """
+
         moving = True if (self.moving_fwd or self.moving_bwd) else False
         turning = True if (self.turning_left or self.turning_right) else False
 
@@ -253,11 +259,28 @@ class Car:
 
         # after getting inputs (speed, steering rate), feed to inverse kinematics
         calc_inverse(self)
-        # update car position and orientation
+
+        self.last_car_origin3d = self.car_origin3d.copy()
+        self.last_car_origin2d = self.car_origin2d
         self.car_origin3d[0] += self.P_i_dot[0]  # x
         self.car_origin3d[1] += self.P_i_dot[1]  # y
         self.car_orientation += self.P_i_dot[2]  # theta
         self.steering_angle += self.P_i_dot[3]  # phi
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
+
+        # one step back if car out of game window:
+        if self.game_stats.game_active:
+            if (self.car_origin3d[0] > self.settings.map_screen['xlim'] + 20) or \
+                    (self.car_origin3d[0] < -20) or \
+                    (self.car_origin3d[1] > self.settings.map_screen['ylim'] + 20) or \
+                    (self.car_origin3d[1] < -20):
+                self.step_back()
+        else:
+            if (self.car_origin2d[0] > self.settings.main_screen['w'] - 10) or \
+                    (self.car_origin2d[0] < 10) or \
+                    (self.car_origin2d[1] > self.settings.main_screen['h'] - 10) or \
+                    (self.car_origin2d[1] < 10):
+                self.step_back()
 
         self.apply_transformations()
 
@@ -295,7 +318,7 @@ class Car:
 class LargeCar(Car):
     def __init__(self, settings, screen, scale=40):
         zoomed_scale = scale * settings.zoom_region['factor']
-        super().__init__(settings, screen, zoomed_scale)
+        super().__init__(settings, screen, None, scale=zoomed_scale)
         self.car_origin3d = np.float32([0, 0, 0])
 
         if self.settings.zoom_region['3d']:  # trimetric view
