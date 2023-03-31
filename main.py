@@ -12,7 +12,7 @@ import game_function as gf
 from workspace import Workspace
 from car import Car, LargeCar
 from settings import Settings
-from button import ZoomButton
+from button import ZoomButton, RestartButton
 from latex_window import LatexWindow
 from game_stats import GameStats
 
@@ -40,6 +40,7 @@ def run_game():
     workspace = Workspace(settings, screen1, my_car)
     zoom_buttons = [ZoomButton(settings, screen1, label)
                     for label in ['+', '-', 'R']]
+    restart_button = RestartButton(settings, screen1, 'Restart')
     latex_window = LatexWindow(settings, screen2, my_car)
 
     avg = 0
@@ -48,11 +49,12 @@ def run_game():
         start = time.time()
 
         # must be before update()
-        gf.detect_collision(game_stats, screen,
-                            my_car, my_large_car, workspace.red_line)
+        gf.detect_collision(game_stats, screen, my_car, my_large_car,
+                            workspace.red_line, restart_button)
         screen.fill((255, 255, 255))
 
-        gf.check_event(settings, game_stats, my_car, my_large_car, zoom_buttons)
+        gf.check_event(settings, game_stats, my_car, my_large_car,
+                       zoom_buttons, restart_button)
 
         my_car.update()
         my_large_car.update_zoomed_map(my_car.car_orientation,
@@ -60,7 +62,8 @@ def run_game():
         latex_window.update()
 
         gf.update_screen(settings, game_stats, screen1, screen2,
-                         workspace, my_car, my_large_car, zoom_buttons, latex_window, i)
+                         workspace, my_car, my_large_car, zoom_buttons, restart_button,
+                         latex_window, i)
 
         screen.blit(screen1, settings.map_screen['topleft'])
         screen.blit(screen2, settings.latex_region['topleft'])

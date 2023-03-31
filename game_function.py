@@ -18,7 +18,8 @@ scale_factor = my_settings.map_screen['scale_factor']
 origin2d = my_settings.map_screen['origin2d']
 
 
-def check_event(settings, game_stats, car, large_car, zoom_buttons):
+def check_event(settings, game_stats, car, large_car,
+                zoom_buttons, restart_button):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -29,16 +30,20 @@ def check_event(settings, game_stats, car, large_car, zoom_buttons):
             check_keyup_event(event, car, large_car)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            check_mouse_click_event(settings, large_car,
-                                    zoom_buttons, mouse_x, mouse_y)
+            check_mouse_click_event(settings, car, large_car,
+                                    zoom_buttons, restart_button,
+                                    mouse_x, mouse_y)
 
 
-def check_mouse_click_event(settings, large_car,
-                            zoom_buttons, mouse_x, mouse_y):
+def check_mouse_click_event(settings, car, large_car,
+                            zoom_buttons, restart_button,
+                            mouse_x, mouse_y):
     button_zoom_in, button_zoom_out, button_reset = zoom_buttons
     zoom_in_click = button_zoom_in.rect.collidepoint(mouse_x, mouse_y)
     zoom_out_click = button_zoom_out.rect.collidepoint(mouse_x, mouse_y)
     reset_click = button_reset.rect.collidepoint(mouse_x, mouse_y)
+
+    restart_click = restart_button.rect.collidepoint(mouse_x, mouse_y)
 
     if zoom_in_click:
         settings.zoom_region['factor'] *= 1.1
@@ -52,6 +57,9 @@ def check_mouse_click_event(settings, large_car,
         settings.zoom_region['factor'] = settings.initial_zoom_in_factor
         large_car.scale = settings.zoom_region['factor'] * 40
         large_car.reset_dimensions()
+    if restart_click:
+        car.reset_positions()
+        large_car.reset_zoomed_map()
 
 
 def check_keydown_event(event, car, large_car):
@@ -101,21 +109,7 @@ def check_keyup_event(event, car, large_car):
         large_car.brake = False
 
 
-def update_screen(settings, game_stats, screen1, screen2,
-                  workspace, car, large_car, zoom_buttons, latex_window, i):
-    screen1.fill(settings.map_screen['bg_color'])
-    screen2.fill(settings.latex_region['bg_color'])
-
-    workspace.draw()
-    car.draw()
-    large_car.draw()
-    latex_window.draw()
-
-    for button in zoom_buttons:
-        button.draw_button()
-
-
-def detect_collision(game_stats, screen, car, large_car, red_line):
+def detect_collision(game_stats, screen, car, large_car, red_line, restart_button):
     if car.car_origin3d[0] < 1000 or car.car_origin3d[0] > 4000 or \
             car.car_origin3d[1] < 500 or car.car_origin3d[1] > 2000:
         return
@@ -148,9 +142,13 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
 
         if game_stats.game_active:
             car.moving_fwd = False
-            large_car.moving_fwd = False
             car.moving_bwd = False
+            car.turning_left = False
+            car.turning_right = False
+            large_car.moving_fwd = False
             large_car.moving_bwd = False
+            large_car.turning_left = False
+            large_car.turning_right = False
             car.step_back()
             car.car_speed = 1e-20
             car.steering_angle = 0
@@ -163,10 +161,36 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
                         if event.key == pygame.K_UP:
                             car.moving_fwd = True
                             large_car.moving_fwd = True
+                            paused = False
                         elif event.key == pygame.K_DOWN:
                             car.moving_bwd = True
                             large_car.moving_bwd = True
-                        paused = False
+                            paused = False
+                        elif event.key == pygame.K_SPACE:
+                            paused = False
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse_x, mouse_y = pygame.mouse.get_pos()
+                        restart_click = restart_button.rect.collidepoint(mouse_x, mouse_y)
+                        if restart_click:
+                            car.reset_positions()
+                            large_car.reset_zoomed_map()
+                            paused = False
+
+
+def update_screen(settings, game_stats, screen1, screen2,
+                  workspace, car, large_car, zoom_buttons, restart_button,
+                  latex_window, i):
+    screen1.fill(settings.map_screen['bg_color'])
+    screen2.fill(settings.latex_region['bg_color'])
+
+    workspace.draw()
+    car.draw()
+    large_car.draw()
+    latex_window.draw()
+
+    for button in zoom_buttons:
+        button.draw_button()
+    restart_button.draw_button()
 
 
 def rotation(theta, direction):

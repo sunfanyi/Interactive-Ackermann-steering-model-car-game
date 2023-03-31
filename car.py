@@ -25,7 +25,9 @@ class Car:
         self.scale = scale
 
         self.reset_dimensions()
+        self.reset_positions()
 
+    def reset_positions(self):
         # indicator of how many cycles the wheels have turned
         self.wheel_phi_counter = 0
 
@@ -319,6 +321,9 @@ class LargeCar(Car):
     def __init__(self, settings, screen, scale=40):
         zoomed_scale = scale * settings.zoom_region['factor']
         super().__init__(settings, screen, None, scale=zoomed_scale)
+        self.reset_zoomed_map()
+
+    def reset_zoomed_map(self):
         self.car_origin3d = np.float32([0, 0, 0])
 
         if self.settings.zoom_region['3d']:  # trimetric view
