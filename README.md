@@ -1,6 +1,6 @@
 2023.04.05
 
-![](Figures/logs/2023_04_05_1.png)
+![](Figures/logs/2023_04_05_2.png)
 
 Comment (2023.03.30):
 

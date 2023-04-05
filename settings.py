@@ -11,14 +11,14 @@ import numpy as np
 class Settings:
     main_screen = {
         'bg_color': (255, 255, 255),
-        'w': 1300,
+        'w': 1250,
         'h': 600,
     }
 
     # Screen 1
     screen1 = {
         'topleft': (0, 0),
-        'w': 800,
+        'w': 850,
         'h': 600,
         'bg_color': (255, 255, 255),
     }
@@ -29,7 +29,7 @@ class Settings:
     zlim = 500
     map_screen = {
         'topleft': (0, 0),
-        'w': 800,
+        'w': 850,
         'h': 600,
         'path': 'Figures/CWMap.jpg',
         'xlim': xlim,
@@ -45,13 +45,13 @@ class Settings:
         'z_tick_interval': 500,  # tick label interval for Z-axes
 
         # Scaling factors for plotting:
-        'scale_factor': 0.13,
+        'scale_factor': 0.135,
     }
 
     # Screen 2
     screen2 = {
-        'topleft': (800, 0),
-        'w': 500,
+        'topleft': (850, 0),
+        'w': 450,
         'h': 600,
         'bg_color': (255, 255, 255),
     }
@@ -67,7 +67,7 @@ class Settings:
     # zoom in region (screen 2)
     initial_zoom_in_factor = 2
     zoom_region = {
-        'topleft': (20, 210),
+        'topleft': (10, 220),
         'window_radius': 100,
         'factor': initial_zoom_in_factor,  # dynamic value
         '3d': False,
@@ -80,16 +80,16 @@ class Settings:
 
     # steering wheel region (screen 2)
     steering_wheel = {
-        'topleft': (350, 250),
+        'topleft': (265, 260),
         'w': 100,
         'h': 100,
         'path': 'Figures/steering_wheel.png',
     }
 
     # Keyboard panel (screen 2)
-    y_aligned = 525
+    y_aligned = 505
     keyboard_panel = {
-        'space_topleft': (50, y_aligned),
+        'space_topleft': (30, y_aligned),
         'space_w': 150,
         'space_h': 50,
         'space_path': 'Figures/keyspace.png',
@@ -98,8 +98,8 @@ class Settings:
         'arrows_w': 50,
         'arrows_h': 50,
         # lists for up, down, left, right:
-        'arrows_topleft': [(300, 465), (300, y_aligned),
-                           (240, y_aligned), (360, y_aligned)],
+        'arrows_topleft': [(275, y_aligned-60), (275, y_aligned),
+                           (215, y_aligned), (335, y_aligned)],
         'arrows_path': ['Figures/keyup.png', 'Figures/keydown.png',
                         'Figures/keyleft.png', 'Figures/keyright.png'],
         'arrows_pressed_path': ['Figures/keyup_pressed.png', 'Figures/keydown_pressed.png',

@@ -15,11 +15,11 @@ def extract_color(img, color):
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
     if color == 'R':
-        lower_red = np.array([0, 180, 50])
+        lower_red = np.array([0, 210, 50])
         upper_red = np.array([15, 255, 255])
         mask1 = cv2.inRange(hsv, lower_red, upper_red)
 
-        lower_red = np.array([165, 180, 50])
+        lower_red = np.array([165, 210, 50])
         upper_red = np.array([180, 255, 255])
         mask2 = cv2.inRange(hsv, lower_red, upper_red)
 
@@ -31,33 +31,29 @@ def extract_color(img, color):
         elif color == 'B':
             a = 90
             b = 120
+        else:
+            raise ValueError('Color not identified')
         lower = np.array([a, 180, 50])
         upper = np.array([b, 255, 255])
         mask = cv2.inRange(hsv, lower, upper)
 
+    # apply opening to remove noise
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
     # Apply the mask to the original image
     result = img.copy()
     result[mask == 0, :] = [0, 0, 0]
-    #     result[mask!=0, :] = [255, 255, 255]
-
-    # # apply opening to remove noise
-    # kernel = np.ones((5, 5), np.uint8)
-    # result = cv2.morphologyEx(result, cv2.MORPH_OPEN, kernel)
-
-    mask = (mask == 255)
     return result, mask
 
 
-def mask2xy(img_mask):
+def mask2xy(mask):
     """
     From mask to xy coordinates
-    :param img_mask: [h, w, 3] or [h, w, 1]
+    :param mask: [h, w], boolean
     :return: xy coordinates with shape [N, 2]
     """
-    if len(img_mask.shape) == 3:  # RGB
-        img_mask = cv2.cvtColor(img_mask, cv2.COLOR_BGR2GRAY)
-
-    coords = np.argwhere(img_mask > 0)
+    coords = np.argwhere(mask)
     coords = coords.reshape((-1, 2))  # N x 2
     coords = np.fliplr(coords)  # (y, x) to (x, y)
     return coords
@@ -65,7 +61,6 @@ def mask2xy(img_mask):
 
 def show_img(image, title=None):
     image = image.astype(np.uint8)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     plt.imshow(image)
     # plt.axis('off')

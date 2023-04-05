@@ -52,7 +52,7 @@ def run_game():
         # must be before update()
         gf.detect_collision(game_stats, screen, my_car, my_large_car,
                             workspace.red_line, restart_button)
-        # screen.fill((255, 255, 255))
+        screen.fill((255, 255, 255))
 
         gf.check_event(settings, game_stats, my_car, my_large_car,
                        zoom_buttons, restart_button)

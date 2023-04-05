@@ -29,7 +29,7 @@ class LatexWindow:
 
     def get_surf_latex(self):
         x_left = 0.1
-        x_right = 0.9
+        x_right = 1
         text_center_aligned = {
             '$V$': (x_left, 1 / 8),
             '$\\dot{\\psi}$': (x_left, 2 / 8),
@@ -51,7 +51,8 @@ class LatexWindow:
 
         text_left_aligned = {
             'Inputs:': (0, 0),
-            'Outputs:': (0, 3.1 / 8)
+            'Outputs:': (0, 3.1 / 8),
+            '=>': (0.77, 1.65 / 8)
         }
 
         # adjust ratio to change figsize, fontsize, DPI to optimise speed

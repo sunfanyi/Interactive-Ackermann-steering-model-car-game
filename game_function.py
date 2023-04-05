@@ -183,8 +183,11 @@ def update_screen(settings, game_stats, screen1, screen2,
     screen1.fill(settings.screen1['bg_color'])
     screen2.fill(settings.screen2['bg_color'])
 
+    # screen 1
     workspace.draw()
     car.draw()
+
+    # screen 2
     control_panel.draw()
     large_car.draw()
     latex_window.draw()
