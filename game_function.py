@@ -74,7 +74,6 @@ def check_car_moving(event, car, large_car):
     In the flipped coordinate system, they are opposite.
     """
     if event.key == pygame.K_UP:
-        print('moving forward')
         car.moving_fwd = True
         large_car.moving_fwd = True
     elif event.key == pygame.K_DOWN:
@@ -167,6 +166,7 @@ def detect_collision(game_stats, screen, car, large_car, red_line, restart_butto
                             large_car.moving_bwd = True
                             paused = False
                         elif event.key == pygame.K_SPACE:
+                            car.brake = True
                             paused = False
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -179,12 +179,13 @@ def detect_collision(game_stats, screen, car, large_car, red_line, restart_butto
 
 def update_screen(settings, game_stats, screen1, screen2,
                   workspace, car, large_car, zoom_buttons, restart_button,
-                  latex_window, i):
-    screen1.fill(settings.map_screen['bg_color'])
-    screen2.fill(settings.latex_region['bg_color'])
+                  latex_window, control_panel):
+    screen1.fill(settings.screen1['bg_color'])
+    screen2.fill(settings.screen2['bg_color'])
 
     workspace.draw()
     car.draw()
+    control_panel.draw()
     large_car.draw()
     latex_window.draw()
 

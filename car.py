@@ -42,7 +42,7 @@ class Car:
         self.last_car_origin2d = self.car_origin2d
         self.car_orientation = 0  # theta, in radians
         self.steering_angle = 0   # psi, in radians
-        # negligible initial V, otherwise ICR = nan at the beginning
+        # non-zero initial V, otherwise ICR = nan at the beginning
         # beta will be zero even with steering when game starts until assign a speed
         self.car_speed = 1e-10  # in m/s, avoid divided by zero
         self.steering_rate = 0  # in rad/s

@@ -15,6 +15,7 @@ from settings import Settings
 from button import ZoomButton, RestartButton
 from latex_window import LatexWindow
 from game_stats import GameStats
+from control_panel import ControlPanel
 
 import numpy as np
 
@@ -27,21 +28,21 @@ def run_game():
         (settings.main_screen['w'], settings.main_screen['h']))
     pygame.display.set_caption('Mobile Robot')
 
-    screen1 = pygame.Surface((settings.map_screen['w'],
-                              settings.map_screen['h']),
+    screen1 = pygame.Surface((settings.screen1['w'],
+                              settings.screen1['h']),
                              pygame.SRCALPHA)
-    screen2 = pygame.Surface((settings.latex_region['w'],
-                              settings.latex_region['h']),
+    screen2 = pygame.Surface((settings.screen2['w'],
+                              settings.screen2['h']),
                              pygame.SRCALPHA)
-    # screen1 = screen
-    my_car = Car(settings, screen1, game_stats)
 
-    my_large_car = LargeCar(settings, screen1)
+    my_car = Car(settings, screen1, game_stats)
+    my_large_car = LargeCar(settings, screen2)
     workspace = Workspace(settings, screen1, my_car)
-    zoom_buttons = [ZoomButton(settings, screen1, label)
+    zoom_buttons = [ZoomButton(settings, screen2, label)
                     for label in ['+', '-', 'R']]
     restart_button = RestartButton(settings, screen1, 'Restart')
     latex_window = LatexWindow(settings, screen2, my_car)
+    control_panel = ControlPanel(settings, screen2, workspace, my_car)
 
     avg = 0
     i = 0
@@ -51,7 +52,7 @@ def run_game():
         # must be before update()
         gf.detect_collision(game_stats, screen, my_car, my_large_car,
                             workspace.red_line, restart_button)
-        screen.fill((255, 255, 255))
+        # screen.fill((255, 255, 255))
 
         gf.check_event(settings, game_stats, my_car, my_large_car,
                        zoom_buttons, restart_button)
@@ -63,10 +64,10 @@ def run_game():
 
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
-                         latex_window, i)
+                         latex_window, control_panel)
 
-        screen.blit(screen1, settings.map_screen['topleft'])
-        screen.blit(screen2, settings.latex_region['topleft'])
+        screen.blit(screen1, settings.screen1['topleft'])
+        screen.blit(screen2, settings.screen2['topleft'])
         pygame.display.update()
 
         # i += 1

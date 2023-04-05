@@ -23,6 +23,9 @@ class LatexWindow:
 
         self.get_surf_latex()
         self.get_surf_units()
+        self.surf_updating = pygame.Surface((self.settings.latex_region['w'],
+                                             self.settings.latex_region['h']),
+                                            pygame.SRCALPHA)
 
     def get_surf_latex(self):
         x_left = 0.1
@@ -104,9 +107,7 @@ class LatexWindow:
             2. Left wheels become right wheels, and vice versa.
             3. Wheels' orientation change sign as left turn becomes right turn.
         """
-        self.surf_updating = pygame.Surface((self.settings.latex_region['w'],
-                                             self.settings.latex_region['h']),
-                                            pygame.SRCALPHA)
+        self.surf_updating.fill(self.settings.latex_region['bg_color'])
 
         values = [self.car.car_speed,  # V
                   -self.car.P_i_dot[3],  # dot_psi
@@ -144,6 +145,6 @@ class LatexWindow:
             self.surf_updating.blit(label, pos)
 
     def draw(self):
-        self.screen.blit(self.surf_latex, (0, 0))
         self.screen.blit(self.surf_updating, (0, 0))
+        self.screen.blit(self.surf_latex, (0, 0))
         self.screen.blit(self.surf_units, (0, 0))
