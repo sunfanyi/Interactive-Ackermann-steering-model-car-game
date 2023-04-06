@@ -12,7 +12,8 @@ import game_function as gf
 from workspace import Workspace
 from car import Car, LargeCar
 from settings import Settings
-from button import ZoomButton, RestartButton
+from button import ZoomButton, RestartButton, \
+    TrimetricButton, get_axes_rotation_buttons
 from latex_window import LatexWindow
 from game_stats import GameStats
 from control_panel import ControlPanel
@@ -38,11 +39,15 @@ def run_game():
     workspace = Workspace(settings, screen1)
     my_car = Car(settings, screen1, game_stats, workspace)
     my_large_car = LargeCar(settings, screen2, workspace)
+
+    latex_window = LatexWindow(settings, screen2, my_car)
+    control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
+
     zoom_buttons = [ZoomButton(settings, screen, label, '2')
                     for label in ['+', '-', 'R']]
     restart_button = RestartButton(settings, screen, 'Restart', '1')
-    latex_window = LatexWindow(settings, screen2, my_car)
-    control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
+    trimetric_button = TrimetricButton(settings, screen, 'Trimetric Reset', '1')
+    axes_buttons = get_axes_rotation_buttons(settings, screen, '1')
 
     avg = 0
     i = 0
@@ -53,20 +58,22 @@ def run_game():
         screen.blit(screen2, settings.screen2['topleft'])
         # screen.fill((255, 255, 255))
 
-        gf.check_event(settings, game_stats, my_car, my_large_car,
-                       zoom_buttons, restart_button)
+        gf.check_event(settings, game_stats, workspace, my_car, my_large_car,
+                       zoom_buttons, restart_button, trimetric_button, axes_buttons)
+
+        my_car.update()
 
         if not game_stats.car_freeze:
-            my_car.update()
+            # keep it frozen
+            my_large_car.update_zoomed_map(my_car.car_orientation,
+                                           my_car.wheels_orientation)
 
-        my_large_car.update_zoomed_map(my_car.car_orientation,
-                                       my_car.wheels_orientation)
         control_panel.update()
         latex_window.update()
 
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
-                         latex_window, control_panel)
+                         trimetric_button, axes_buttons, latex_window, control_panel)
 
         pygame.display.update()
 

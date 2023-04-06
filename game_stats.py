@@ -12,4 +12,4 @@ class GameStats:
 
         # for collision detection
         self.car_freeze = False
-        self.collision_point = (0, 0)
+        self.collision_point = [0, 0, 0]

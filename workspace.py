@@ -19,16 +19,17 @@ class Workspace:
         self.settings = settings
 
         img = cv2.imread(self.settings.map_screen['path'])
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         self.R_view = gf.trimetric_view()
-        self.get_3D_map(img)
-        self.map2d = self.pad_2D_map(img)
+        self.get_3D_map()
+        self.map2d = self.pad_2D_map()
         self.get_axes()
 
-        _, self.red_line = extract_color(img, 'R')
+        _, self.red_line = extract_color(self.img, 'R')
 
-    def get_3D_map(self, img):
+    def get_3D_map(self):
+        img = self.img
         img_w = img.shape[1]
         img_h = img.shape[0]
 
@@ -62,13 +63,13 @@ class Workspace:
 
         self.map3d = pygame.surfarray.make_surface(map3d)
 
-    def pad_2D_map(self, img):
+    def pad_2D_map(self):
         """
         Pad edges with zero for cropping the zoomed in region
         when the car is in the boundary of the map
         """
         pad_size = 1000
-        img = img
+        img = self.img
         pad = np.full((img.shape[0] + 2 * pad_size,
                        img.shape[1] + 2 * pad_size,
                        3), 255, dtype=np.uint8)
@@ -135,6 +136,14 @@ class Workspace:
             tick_x, tick_y = gf.point_3d_to_2d(0, 0, i, self.R_view, self.map_pos)
             tick_label = tick_font.render(str(i), True, tick_color)
             self.axes.blit(tick_label, (tick_x, tick_y))
+
+    def update_R(self, R=np.eye(3), reset=False):
+        if reset:
+            self.R_view = gf.trimetric_view()
+        else:
+            self.R_view = np.matmul(self.R_view, R)
+        self.get_3D_map()
+        self.get_axes()
 
     def draw(self):
         self.screen.blit(self.map3d, self.settings.map_screen['topleft'])

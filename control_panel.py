@@ -161,7 +161,7 @@ class ControlPanel:
 
     def draw_keyboard_panel(self):
         car_motion = [self.car.moving_fwd, self.car.moving_bwd,
-                      self.car.turning_left, self.car.turning_right]
+                      self.car.turning_right, self.car.turning_left]
         for i in range(4):
             if car_motion[i]:
                 img = self.imgs_arrow_pressed[i]

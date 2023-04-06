@@ -47,6 +47,35 @@ class Settings:
         'scale_factor': 0.135,
     }
 
+    # axes rotation panel (screen 1)
+    w = 50
+    dx = 10
+    dy = 5
+    topleft = (650, 70)  # center of the topleft icon
+    axes_rotation = {
+        'path': ['Figures/x_anticlockwise.png',
+                 'Figures/x_clockwise.png',
+                 'Figures/y_anticlockwise.png',
+                 'Figures/y_clockwise.png',
+                 'Figures/z_anticlockwise.png',
+                 'Figures/z_clockwise.png'],
+        'center': [
+            (topleft[0], topleft[1]),
+            (topleft[0], topleft[1] + w + dy),
+            (topleft[0] + w + dx, topleft[1]),
+            (topleft[0] + w + dx, topleft[1] + w + dy),
+            (topleft[0] + 2 * (w + dx), topleft[1]),
+            (topleft[0] + 2 * (w + dx), topleft[1] + w + dy)
+        ],
+        'icon_w': w,
+        'bg_color': (150, 150, 150, 20),
+
+        'trimetric_center': (topleft[0] + w + dx, topleft[1] + 2 * w + dy),
+        'trimetric_w': 3 * w + 2 * dx - 10,
+        'trimetric_h': w - 15,
+
+    }
+
     # Screen 2
     screen2 = {
         'topleft': (850, 0),
@@ -97,7 +126,7 @@ class Settings:
         'arrows_w': 50,
         'arrows_h': 50,
         # lists for up, down, left, right:
-        'arrows_topleft': [(275, y_aligned-60), (275, y_aligned),
+        'arrows_topleft': [(275, y_aligned - 60), (275, y_aligned),
                            (215, y_aligned), (335, y_aligned)],
         'arrows_path': ['Figures/keyup.png', 'Figures/keydown.png',
                         'Figures/keyleft.png', 'Figures/keyright.png'],

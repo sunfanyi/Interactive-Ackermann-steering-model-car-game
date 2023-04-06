@@ -25,10 +25,6 @@ class Car:
         self.workspace = workspace
         self.scale = scale
 
-        # View
-        self.R_view = gf.trimetric_view()
-        self.offset = self.settings.map_screen['topleft']
-
         self.reset_dimensions()
         self.reset_motion()
         self.reset_positions()
@@ -232,6 +228,10 @@ class Car:
         """
         self.R_view = self.workspace.R_view
         self.offset = self.workspace.map_pos + self.settings.map_screen['topleft']
+
+        if self.game_stats.car_freeze:
+            # stop updating
+            return
 
         moving = True if (self.moving_fwd or self.moving_bwd) else False
         turning = True if (self.turning_left or self.turning_right) else False

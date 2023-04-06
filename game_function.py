@@ -17,25 +17,25 @@ my_settings = Settings()
 scale_factor = my_settings.map_screen['scale_factor']
 
 
-def check_event(settings, game_stats, car, large_car,
-                zoom_buttons, restart_button):
+def check_event(settings, game_stats, workspace, car, large_car,
+                zoom_buttons, restart_button, trimetric_button, axes_buttons):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            check_keydown_event(event, game_stats, car, large_car)
+            check_keydown_event(event, game_stats, workspace, car, large_car)
         elif event.type == pygame.KEYUP:
             check_keyup_event(event, car, large_car)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            check_mouse_click_event(settings, game_stats, car, large_car,
-                                    zoom_buttons, restart_button,
-                                    mouse_x, mouse_y)
+            check_mouse_click_event(settings, game_stats, workspace, car, large_car,
+                                    zoom_buttons, restart_button, trimetric_button,
+                                    axes_buttons, mouse_x, mouse_y)
 
 
-def check_mouse_click_event(settings, game_stats, car, large_car,
-                            zoom_buttons, restart_button,
+def check_mouse_click_event(settings, game_stats, workspace, car, large_car,
+                            zoom_buttons, restart_button, trimetric_button, axes_buttons,
                             mouse_x, mouse_y):
     button_zoom_in, button_zoom_out, button_reset = zoom_buttons
     zoom_in_click = button_zoom_in.rect.collidepoint(mouse_x, mouse_y)
@@ -44,11 +44,11 @@ def check_mouse_click_event(settings, game_stats, car, large_car,
 
     restart_click = restart_button.rect.collidepoint(mouse_x, mouse_y)
 
+    trimetric_click = trimetric_button.rect.collidepoint(mouse_x, mouse_y)
     if zoom_in_click:
         settings.zoom_region['factor'] *= 1.1
         large_car.scale *= 1.1
         large_car.reset_dimensions()
-        print(1)
     if zoom_out_click:
         settings.zoom_region['factor'] /= 1.1
         large_car.scale /= 1.1
@@ -63,8 +63,20 @@ def check_mouse_click_event(settings, game_stats, car, large_car,
         large_car.reset_zoomed_map()
         game_stats.car_freeze = False
 
+    # Axes view
+    if trimetric_click:
+        # reset map orientation
+        workspace.update_R(reset=True)
+    for i in range(6):
+        if axes_buttons[i].rect.collidepoint(mouse_x, mouse_y):
+            axis = ['x', 'y', 'z'][i // 2]
+            rotation_angle = 0.1 if i % 2 == 0 else -0.1
+            R = rotation(rotation_angle, axis)
+            workspace.update_R(R)
 
-def check_keydown_event(event, game_stats, car, large_car):
+
+
+def check_keydown_event(event, game_stats, workspace, car, large_car):
     check_car_moving(event, game_stats, car, large_car)
 
 
@@ -118,7 +130,7 @@ def check_keyup_event(event, car, large_car):
 
 def detect_collision(game_stats, screen, car, large_car, red_line):
     if car.car_origin3d[0] < 1000 or car.car_origin3d[0] > 4000 or \
-            car.car_origin3d[1] < 500 or car.car_origin3d[1] > 2000:
+            car.car_origin3d[1] < 500 or car.car_origin3d[1] > 2500:
         return
 
     # get 3d corner points
@@ -127,28 +139,29 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
     x3, y3 = np.round(car.body_lines[3][0][:2]).astype(np.int32)  # RL
     x4, y4 = np.round(car.body_lines[2][0][:2]).astype(np.int32)  # RR
 
+    pos2d = point_3d_to_2d(game_stats.collision_point[0], game_stats.collision_point[1], 0,
+                           R=car.R_view, offset=car.offset)
+    font = pygame.font.Font(None, 38)
+    X = font.render('x', True, (0, 0, 0))
+    text_width, text_height = X.get_size()
+    topleft = (pos2d[0] - text_width // 2,
+               pos2d[1] - text_height // 2)
     if game_stats.car_freeze:
         # if collision
-        font = pygame.font.Font(None, 38)
-        X = font.render('x', True, (0, 0, 0))
-        text_width, text_height = X.get_size()
-        topleft = (game_stats.collision_point[0] - text_width // 2,
-                   game_stats.collision_point[1] - text_height // 2)
         screen.blit(X, topleft)
 
     if red_line[y1, x1] or red_line[y2, x2] or red_line[y3, x3] or red_line[y4, x4]:
         if red_line[y1, x1]:
-            collision_pos = (x1, y1)
+            collision_point = (x1, y1)
         if red_line[y2, x2]:
-            collision_pos = (x2, y2)
+            collision_point = (x2, y2)
         if red_line[y3, x3]:
-            collision_pos = (x3, y3)
+            collision_point = (x3, y3)
         if red_line[y4, x4]:
-            collision_pos = (x4, y4)
+            collision_point = (x4, y4)
 
-        pos2d = point_3d_to_2d(collision_pos[0], collision_pos[1], 0, offset=car.offset)
-        print('collision detected: ' + str(collision_pos))
-        game_stats.collision_point = pos2d
+        print('collision detected: ' + str(collision_point))
+        game_stats.collision_point = collision_point
         game_stats.car_freeze = True
 
         if game_stats.game_active:
@@ -158,7 +171,7 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
 
 def update_screen(settings, game_stats, screen1, screen2,
                   workspace, car, large_car, zoom_buttons, restart_button,
-                  latex_window, control_panel):
+                  trimetric_button, axes_buttons, latex_window, control_panel):
     screen1.fill(settings.screen1['bg_color'])
     screen2.fill(settings.screen2['bg_color'])
 
@@ -173,7 +186,10 @@ def update_screen(settings, game_stats, screen1, screen2,
 
     for button in zoom_buttons:
         button.draw_button()
+    for button in axes_buttons:
+        button.draw_button()
     restart_button.draw_button()
+    trimetric_button.draw_button()
 
     detect_collision(game_stats, screen1, car, large_car,
                      workspace.red_line)
