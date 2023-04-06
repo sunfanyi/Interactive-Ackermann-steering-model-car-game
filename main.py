@@ -38,9 +38,9 @@ def run_game():
     my_car = Car(settings, screen1, game_stats)
     my_large_car = LargeCar(settings, screen2)
     workspace = Workspace(settings, screen1, my_car)
-    zoom_buttons = [ZoomButton(settings, screen2, label)
+    zoom_buttons = [ZoomButton(settings, screen, label, '2')
                     for label in ['+', '-', 'R']]
-    restart_button = RestartButton(settings, screen1, 'Restart')
+    restart_button = RestartButton(settings, screen, 'Restart', '1')
     latex_window = LatexWindow(settings, screen2, my_car)
     control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
 
@@ -49,15 +49,18 @@ def run_game():
     while True:
         start = time.time()
 
-        screen.fill((255, 255, 255))
+        screen.blit(screen1, settings.screen1['topleft'])
+        screen.blit(screen2, settings.screen2['topleft'])
+        # screen.fill((255, 255, 255))
 
         gf.check_event(settings, game_stats, my_car, my_large_car,
                        zoom_buttons, restart_button)
 
         if not game_stats.car_freeze:
             my_car.update()
-            my_large_car.update_zoomed_map(my_car.car_orientation,
-                                           my_car.wheels_orientation)
+
+        my_large_car.update_zoomed_map(my_car.car_orientation,
+                                       my_car.wheels_orientation)
         control_panel.update()
         latex_window.update()
 
@@ -65,8 +68,6 @@ def run_game():
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
                          latex_window, control_panel)
 
-        screen.blit(screen1, settings.screen1['topleft'])
-        screen.blit(screen2, settings.screen2['topleft'])
         pygame.display.update()
 
         # i += 1
