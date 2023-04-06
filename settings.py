@@ -28,14 +28,13 @@ class Settings:
     ylim = 3680
     zlim = 500
     map_screen = {
-        'topleft': (0, 0),
+        'topleft': np.array([0, 170]),
         'w': 850,
-        'h': 600,
+        'h': 400,
         'path': 'Figures/CWMap.jpg',
         'xlim': xlim,
         'ylim': ylim,
         'zlim': zlim,
-        'origin2d': (150, 230),
         'origin3d': [0, 0, 0],
         'xend': [xlim, 0, 0],  # X-axis range
         'yend': [0, ylim, 0],  # Y-axis range

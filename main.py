@@ -35,9 +35,9 @@ def run_game():
                               settings.screen2['h']),
                              pygame.SRCALPHA)
 
-    my_car = Car(settings, screen1, game_stats)
-    my_large_car = LargeCar(settings, screen2)
-    workspace = Workspace(settings, screen1, my_car)
+    workspace = Workspace(settings, screen1)
+    my_car = Car(settings, screen1, game_stats, workspace)
+    my_large_car = LargeCar(settings, screen2, workspace)
     zoom_buttons = [ZoomButton(settings, screen, label, '2')
                     for label in ['+', '-', 'R']]
     restart_button = RestartButton(settings, screen, 'Restart', '1')

@@ -18,15 +18,16 @@ class Car:
     so as the car, so the left wheels are actually on the right side from the screen.
     When pressing the left key, the car actually turns right, but flipped on the screen.
     """
-    def __init__(self, settings, screen, game_stats, scale=40):
+    def __init__(self, settings, screen, game_stats, workspace, scale=40):
         self.settings = settings
         self.screen = screen
         self.game_stats = game_stats
+        self.workspace = workspace
         self.scale = scale
 
         # View
         self.R_view = gf.trimetric_view()
-        self.offset = self.settings.map_screen['origin2d']
+        self.offset = self.settings.map_screen['topleft']
 
         self.reset_dimensions()
         self.reset_motion()
@@ -229,6 +230,8 @@ class Car:
         """
         Capture car moving from keyboard input and move the T matrices for car and wheels.
         """
+        self.R_view = self.workspace.R_view
+        self.offset = self.workspace.map_pos + self.settings.map_screen['topleft']
 
         moving = True if (self.moving_fwd or self.moving_bwd) else False
         turning = True if (self.turning_left or self.turning_right) else False
@@ -320,16 +323,16 @@ class Car:
 
 
 class LargeCar(Car):
-    def __init__(self, settings, screen, scale=40):
+    def __init__(self, settings, screen, workspace, scale=40):
         zoomed_scale = scale * settings.zoom_region['factor']
-        super().__init__(settings, screen, None, scale=zoomed_scale)
+        super().__init__(settings, screen, None, workspace, scale=zoomed_scale)
         self.reset_zoomed_map()
 
     def reset_zoomed_map(self):
         self.car_origin3d = np.float32([0, 0, 0])
 
         if self.settings.zoom_region['3d']:  # trimetric view
-            self.R_view = gf.trimetric_view()
+            self.R_view = self.workspace.R_view
         else:  # top view
             self.R_view = np.eye(3)
 

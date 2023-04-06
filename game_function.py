@@ -15,7 +15,6 @@ from settings import Settings
 my_settings = Settings()
 
 scale_factor = my_settings.map_screen['scale_factor']
-origin2d = my_settings.map_screen['origin2d']
 
 
 def check_event(settings, game_stats, car, large_car,
@@ -60,6 +59,7 @@ def check_mouse_click_event(settings, game_stats, car, large_car,
         large_car.reset_dimensions()
     if restart_click:
         car.reset_positions()
+        car.reset_motion()
         large_car.reset_zoomed_map()
         game_stats.car_freeze = False
 
@@ -146,7 +146,7 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
         if red_line[y4, x4]:
             collision_pos = (x4, y4)
 
-        pos2d = point_3d_to_2d(collision_pos[0], collision_pos[1], 0)
+        pos2d = point_3d_to_2d(collision_pos[0], collision_pos[1], 0, offset=car.offset)
         print('collision detected: ' + str(collision_pos))
         game_stats.collision_point = pos2d
         game_stats.car_freeze = True
@@ -175,7 +175,8 @@ def update_screen(settings, game_stats, screen1, screen2,
         button.draw_button()
     restart_button.draw_button()
 
-    detect_collision(game_stats, screen1, car, large_car, workspace.red_line)
+    detect_collision(game_stats, screen1, car, large_car,
+                     workspace.red_line)
 
 
 def rotation(theta, direction):
@@ -217,7 +218,7 @@ def trimetric_view():
 R_trimetic = trimetric_view()
 
 
-def draw_line(screen, line, color=(0, 0, 0), linewidth=1, R=R_trimetic, offset=origin2d):
+def draw_line(screen, line, color=(0, 0, 0), linewidth=1, R=R_trimetic, offset=(0, 0)):
     p1 = line[0]
     p2 = line[1]
 
@@ -229,7 +230,7 @@ def draw_line(screen, line, color=(0, 0, 0), linewidth=1, R=R_trimetic, offset=o
     return p1_2d, p2_2d
 
 
-def point_3d_to_2d(x, y, z, R=R_trimetic, offset=origin2d):
+def point_3d_to_2d(x, y, z, R=R_trimetic, offset=(0, 0)):
     # flip y-axis for visualisation,
     # so anticlockwise becomes negative and clockwise becomes positive
     y = - y
