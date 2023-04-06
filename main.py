@@ -12,8 +12,7 @@ import game_function as gf
 from workspace import Workspace
 from car import Car, LargeCar
 from settings import Settings
-from button import ZoomButton, RestartButton, \
-    TrimetricButton, get_axes_rotation_buttons
+from button import TextButton, ImgButton
 from latex_window import LatexWindow
 from game_stats import GameStats
 from control_panel import ControlPanel
@@ -43,11 +42,12 @@ def run_game():
     latex_window = LatexWindow(settings, screen2, my_car)
     control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
 
-    zoom_buttons = [ZoomButton(settings, screen, label, '2')
-                    for label in ['+', '-', 'R']]
-    restart_button = RestartButton(settings, screen, 'Restart', '1')
-    trimetric_button = TrimetricButton(settings, screen, 'Trimetric Reset', '1')
-    axes_buttons = get_axes_rotation_buttons(settings, screen, '1')
+    zoom_buttons = [TextButton(setting, screen) for setting in
+                    [settings.but_zoom_in, settings.but_zoom_out, settings.but_zoom_reset]]
+    restart_button = TextButton(settings.but_restart, screen)
+    trimetric_button = TextButton(settings.but_trimetric, screen)
+    axes_buttons = [ImgButton(setting, screen) for setting in settings.buts_rot_axes]
+    switch_buttons = [ImgButton(setting, screen) for setting in settings.buts_switch]
 
     avg = 0
     i = 0
@@ -59,7 +59,8 @@ def run_game():
         # screen.fill((255, 255, 255))
 
         gf.check_event(settings, game_stats, workspace, my_car, my_large_car,
-                       zoom_buttons, restart_button, trimetric_button, axes_buttons)
+                       zoom_buttons, restart_button, trimetric_button,
+                       axes_buttons, switch_buttons)
 
         my_car.update()
 
@@ -73,7 +74,7 @@ def run_game():
 
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
-                         trimetric_button, axes_buttons, latex_window, control_panel)
+                         trimetric_button, axes_buttons, switch_buttons, latex_window, control_panel)
 
         pygame.display.update()
 

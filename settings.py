@@ -8,14 +8,24 @@
 import numpy as np
 
 
+def center2global(button, screen):
+    """
+    Convert the position of a button from subscreen to the main screen.
+    This is done because the input screen of a button should always be the main
+    for MouseClick event, but the button positions are defined in the subscreens.
+    """
+    x = button['center'][0] + screen['topleft'][0]
+    y = button['center'][1] + screen['topleft'][1]
+    button['center'] = (x, y)
+
+
 class Settings:
     main_screen = {
         'bg_color': (255, 255, 255),
         'w': 1250,
         'h': 600,
     }
-
-    # Screen 1
+    # ======================================== Screen 1 ======================================== #
     screen1 = {
         'topleft': (0, 0),
         'w': 850,
@@ -23,7 +33,7 @@ class Settings:
         'bg_color': (255, 255, 255),
     }
 
-    # Main 3d map (screen 1)
+    # Main 3d map
     xlim = 5224
     ylim = 3680
     zlim = 500
@@ -43,40 +53,13 @@ class Settings:
         'y_tick_interval': 500,  # tick label interval for Y-axes
         'z_tick_interval': 500,  # tick label interval for Z-axes
 
-        # Scaling factors for plotting:
-        'scale_factor': 0.135,
+        'scale_factor': 0.135,  # Scaling factors for plotting:
+
+        'description': 'Euler',  # 'Euler' or 'Fixed' angle rotation
+        # 'description': 'Fixed',
     }
 
-    # axes rotation panel (screen 1)
-    w = 50
-    dx = 10
-    dy = 5
-    topleft = (650, 70)  # center of the topleft icon
-    axes_rotation = {
-        'path': ['Figures/x_anticlockwise.png',
-                 'Figures/x_clockwise.png',
-                 'Figures/y_anticlockwise.png',
-                 'Figures/y_clockwise.png',
-                 'Figures/z_anticlockwise.png',
-                 'Figures/z_clockwise.png'],
-        'center': [
-            (topleft[0], topleft[1]),
-            (topleft[0], topleft[1] + w + dy),
-            (topleft[0] + w + dx, topleft[1]),
-            (topleft[0] + w + dx, topleft[1] + w + dy),
-            (topleft[0] + 2 * (w + dx), topleft[1]),
-            (topleft[0] + 2 * (w + dx), topleft[1] + w + dy)
-        ],
-        'icon_w': w,
-        'bg_color': (150, 150, 150, 20),
-
-        'trimetric_center': (topleft[0] + w + dx, topleft[1] + 2 * w + dy),
-        'trimetric_w': 3 * w + 2 * dx - 10,
-        'trimetric_h': w - 15,
-
-    }
-
-    # Screen 2
+    # ======================================== Screen 2 ======================================== #
     screen2 = {
         'topleft': (850, 0),
         'w': 450,
@@ -84,7 +67,7 @@ class Settings:
         'bg_color': (255, 255, 255),
     }
 
-    # latex region (screen 2)
+    # latex region
     latex_region = {
         'topleft': (0, 0),
         'w': 400,
@@ -92,7 +75,7 @@ class Settings:
         'bg_color': (255, 255, 255),
     }
 
-    # zoom in region (screen 2)
+    # zoom in region
     initial_zoom_in_factor = 2
     zoom_region = {
         'topleft': (10, 220),
@@ -106,7 +89,7 @@ class Settings:
         'debug_frame': True
     }
 
-    # steering wheel region (screen 2)
+    # steering wheel region
     steering_wheel = {
         'topleft': (265, 260),
         'w': 100,
@@ -114,7 +97,7 @@ class Settings:
         'path': 'Figures/steering_wheel.png',
     }
 
-    # Keyboard panel (screen 2)
+    # Keyboard panel
     y_aligned = 505
     keyboard_panel = {
         'space_topleft': (30, y_aligned),
@@ -134,7 +117,98 @@ class Settings:
                                 'Figures/keyleft_pressed.png', 'Figures/keyright_pressed.png'],
     }
 
-    # Car settings:
+    # ======================================== Image Buttons ======================================== #
+    # axes rotation panel
+    view_w = 50
+    view_dx = 10
+    view_dy = 5
+    view_topleft = (650, 70)  # center of the topleft icon
+    paths = ['Figures/x_anticlockwise.png',
+             'Figures/x_clockwise.png',
+             'Figures/y_anticlockwise.png',
+             'Figures/y_clockwise.png',
+             'Figures/z_anticlockwise.png',
+             'Figures/z_clockwise.png']
+    centers = [(view_topleft[0], view_topleft[1]),
+               (view_topleft[0], view_topleft[1] + view_w + view_dy),
+               (view_topleft[0] + view_w + view_dx, view_topleft[1]),
+               (view_topleft[0] + view_w + view_dx, view_topleft[1] + view_w + view_dy),
+               (view_topleft[0] + 2 * (view_w + view_dx), view_topleft[1]),
+               (view_topleft[0] + 2 * (view_w + view_dx), view_topleft[1] + view_w + view_dy)]
+    buts_rot_axes = []
+    for i in range(6):
+        buts_rot_axes.append({
+            'path': paths[i],
+            'center': centers[i],
+            'w': view_w,
+            'h': view_w,
+            'bg_color': (150, 150, 150, 20)
+        })
+        center2global(buts_rot_axes[i], screen1)
+
+    # switch between game and developer mode
+    paths = ['Figures/switch_enable.png', 'Figures/switch_disable.png']
+    buts_switch = []
+    for i in range(2):
+        buts_switch.append({
+            'path': paths[i],
+            'center': (100, 140),
+            'w': 70,
+            'h': 70,
+        })
+        center2global(buts_switch[i], screen1)
+
+    # ======================================== Text Buttons ======================================== #
+    # restart button
+    but_restart = {
+        'msg': 'Restart',
+        'center': (100, 50),
+        'w': 100,
+        'h': 40,
+        'bg_color': (0, 255, 0),
+    }
+    center2global(but_restart, screen1)
+
+    # trimetric view reset button
+    but_trimetric = {
+        'msg': 'Trimetric Reset',
+        'center': (view_topleft[0] + view_w + view_dx,
+                   view_topleft[1] + 2 * view_w + view_dy),
+        'w': 3 * view_w + 2 * view_dx - 10,
+        'h': view_w - 15,
+    }
+    center2global(but_trimetric, screen1)
+
+    # zoom buttons
+    w = 25
+    h = 25
+    but_zoom_in = {
+        'msg': '+',
+        'center': (zoom_region['topleft'][0] + 0.3 * zoom_region['window_radius'],
+                   zoom_region['topleft'][1] + 2.2 * zoom_region['window_radius']),
+        'w': w,
+        'h': h,
+    }
+    but_zoom_out = {
+        'msg': '-',
+        'center': (zoom_region['topleft'][0] + zoom_region['window_radius'],
+                   zoom_region['topleft'][1] + 2.2 * zoom_region['window_radius']),
+        'w': w,
+        'h': h,
+    }
+    but_zoom_reset = {
+        'msg': 'R',
+        'center': (zoom_region['topleft'][0] + 1.7 * zoom_region['window_radius'],
+                   zoom_region['topleft'][1] + 2.2 * zoom_region['window_radius']),
+        'w': w,
+        'h': h,
+    }
+    center2global(but_zoom_in, screen2)
+    center2global(but_zoom_out, screen2)
+    center2global(but_zoom_reset, screen2)
+
+    # ======================================== Others ======================================== #
+    # Car settings
     # acceleration = 0.08
     acceleration = 0.2
     car = {

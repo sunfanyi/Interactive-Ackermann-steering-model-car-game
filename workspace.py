@@ -17,8 +17,9 @@ class Workspace:
     def __init__(self, settings, screen):
         self.screen = screen
         self.settings = settings
-
-        img = cv2.imread(self.settings.map_screen['path'])
+        self.map_settings = settings.map_screen
+        
+        img = cv2.imread(self.map_settings['path'])
         self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         self.R_view = gf.trimetric_view()
@@ -40,10 +41,10 @@ class Workspace:
                                [0, img_h],
                                [img_w, img_h]])
         # corner points to:
-        points3d = [self.settings.map_screen['origin3d'],
-                    self.settings.map_screen['xend'],
-                    self.settings.map_screen['yend'],
-                    [self.settings.map_screen['xlim'], self.settings.map_screen['ylim'], 0]]
+        points3d = [self.map_settings['origin3d'],
+                    self.map_settings['xend'],
+                    self.map_settings['yend'],
+                    [self.map_settings['xlim'], self.map_settings['ylim'], 0]]
         cornersB = np.float32([gf.point_3d_to_2d(*point, self.R_view) for point in points3d])
         # shift negative points:
         cornersB[:, 0] += abs(min(cornersB[:, 0])) + 10
@@ -51,8 +52,8 @@ class Workspace:
         self.map_pos = cornersB[0]  # top left corner of the map
 
         M = cv2.getPerspectiveTransform(cornersA, cornersB)
-        warped = cv2.warpPerspective(img, M, (self.settings.map_screen['w'],
-                                              self.settings.map_screen['h']))
+        warped = cv2.warpPerspective(img, M, (self.map_settings['w'],
+                                              self.map_settings['h']))
         warped = gf.cv2_to_pygame(warped)
 
         # Convert black pixels caused by non-affine transformation to white
@@ -80,18 +81,18 @@ class Workspace:
         return pad
 
     def get_axes(self):
-        self.axes = pygame.surface.Surface((self.settings.map_screen['w'],
-                                            self.settings.map_screen['h']),
-                                             pygame.SRCALPHA)
+        self.axes = pygame.surface.Surface((self.map_settings['w'],
+                                            self.map_settings['h']),
+                                           pygame.SRCALPHA)
 
-        origin3d = self.settings.map_screen['origin3d']
+        origin3d = self.map_settings['origin3d']
 
-        xend = self.settings.map_screen['xend']
-        yend = self.settings.map_screen['yend']
-        zend = self.settings.map_screen['zend']
-        x_tick_interval = self.settings.map_screen['x_tick_interval']
-        y_tick_interval = self.settings.map_screen['y_tick_interval']
-        z_tick_interval = self.settings.map_screen['z_tick_interval']
+        xend = self.map_settings['xend']
+        yend = self.map_settings['yend']
+        zend = self.map_settings['zend']
+        x_tick_interval = self.map_settings['x_tick_interval']
+        y_tick_interval = self.map_settings['y_tick_interval']
+        z_tick_interval = self.map_settings['z_tick_interval']
 
         axes_font = pygame.font.Font(None, 24)  # font for axes labels
         tick_font = pygame.font.Font(None, 18)  # font for tick labels
@@ -141,10 +142,15 @@ class Workspace:
         if reset:
             self.R_view = gf.trimetric_view()
         else:
-            self.R_view = np.matmul(self.R_view, R)
+            if self.map_settings['description'] == 'Euler':
+                self.R_view = np.matmul(self.R_view, R)
+            elif self.map_settings['description'] == 'Fixed':
+                self.R_view = np.matmul(R, self.R_view)
+            else:
+                raise ValueError("Unknown description of orientation")
         self.get_3D_map()
         self.get_axes()
 
     def draw(self):
-        self.screen.blit(self.map3d, self.settings.map_screen['topleft'])
-        self.screen.blit(self.axes, self.settings.map_screen['topleft'])
+        self.screen.blit(self.map3d, self.map_settings['topleft'])
+        self.screen.blit(self.axes, self.map_settings['topleft'])

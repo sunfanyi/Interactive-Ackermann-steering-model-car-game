@@ -17,6 +17,9 @@ class ControlPanel:
         self.game_stats = game_stats
         self.workspace = workspace
         self.car = car
+        
+        self.key_settings = settings.keyboard_panel
+        self.zoom_settings = settings.zoom_region
 
         self.process_keyboard_imgs()
         self.img_steer = pygame.image.load(self.settings.steering_wheel['path'])
@@ -25,18 +28,18 @@ class ControlPanel:
 
     def process_keyboard_imgs(self):
         imgs_arrow = [pygame.image.load(
-            self.settings.keyboard_panel['arrows_path'][i]) for i in range(4)]
+            self.key_settings['arrows_path'][i]) for i in range(4)]
         imgs_arrow_pressed = [pygame.image.load(
-            self.settings.keyboard_panel['arrows_pressed_path'][i]) for i in range(4)]
+            self.key_settings['arrows_pressed_path'][i]) for i in range(4)]
         img_space = pygame.image.load(
-            self.settings.keyboard_panel['space_path'])
+            self.key_settings['space_path'])
         img_space_pressed = pygame.image.load(
-            self.settings.keyboard_panel['space_pressed_path'])
+            self.key_settings['space_pressed_path'])
 
-        w_arrow = self.settings.keyboard_panel['arrows_w']
-        h_arrow = self.settings.keyboard_panel['arrows_h']
-        w_space = self.settings.keyboard_panel['space_w']
-        h_space = self.settings.keyboard_panel['space_h']
+        w_arrow = self.key_settings['arrows_w']
+        h_arrow = self.key_settings['arrows_h']
+        w_space = self.key_settings['space_w']
+        h_space = self.key_settings['space_h']
 
         self.imgs_arrow = [pygame.transform.scale(img, (w_arrow, h_arrow))
                            for img in imgs_arrow]
@@ -46,25 +49,25 @@ class ControlPanel:
         self.img_space_pressed = pygame.transform.scale(img_space_pressed, (w_space, h_space))
 
     def draw_frame(self):
-        r = self.settings.zoom_region['window_radius']
+        r = self.zoom_settings['window_radius']
         self.frame = pygame.Surface((2*r, 2*r), pygame.SRCALPHA)
 
-        if self.settings.zoom_region['edge']:
+        if self.zoom_settings['edge']:
             pygame.draw.circle(self.frame, (50, 50, 50), (r, r),
                                r, 3)
 
-        if self.settings.zoom_region['debug_frame']:
+        if self.zoom_settings['debug_frame']:
             pygame.draw.line(self.frame, (0, 0, 0), (0, r),
                              (2*r, r), 2)
             pygame.draw.line(self.frame, (0, 0, 0), (r, 0),
                              (r, 2*r), 2)
 
-            font = pygame.font.Font(None, 25)
-            pos = (r, r)
-            X = font.render('x', True, (0, 0, 0))
-            text_width, text_height = X.get_size()
-            pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
-            self.frame.blit(X, pos)
+            # font = pygame.font.Font(None, 25)
+            # pos = (r, r)
+            # X = font.render('x', True, (0, 0, 0))
+            # text_width, text_height = X.get_size()
+            # pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
+            # self.frame.blit(X, pos)
 
     def update_steering_wheel(self):
         angle = self.settings.car['steering_ratio'] * self.car.steering_angle * 180 / np.pi
@@ -76,16 +79,16 @@ class ControlPanel:
         self.steering_wheel_sur = img_scaled
 
     def update_zoomed_map(self):
-        r = self.settings.zoom_region['window_radius']
+        r = self.zoom_settings['window_radius']
         w = r * 2
         h = r * 2
-        topleft = self.settings.zoom_region['topleft']
-        zoom_factor = self.settings.zoom_region['factor']
+        topleft = self.zoom_settings['topleft']
+        zoom_factor = self.zoom_settings['factor']
 
         zoom_map_sur = pygame.Surface((w, h))
 
         # Cropping settings
-        if self.settings.zoom_region['3d']:
+        if self.zoom_settings['3d']:
             zoom_radius = r / zoom_factor / zoom_factor
             img = self.workspace.map3d.astype(np.uint8)
             car_center = self.car.car_origin2d
@@ -126,13 +129,13 @@ class ControlPanel:
             res = cropped.copy()
             res[black_pixels] = [255, 255, 255]
 
-            if not self.settings.zoom_region['3d']:
+            if not self.zoom_settings['3d']:
                 res = np.fliplr(res)
 
             # Fill image to surface
             pygame.surfarray.blit_array(zoom_map_sur, res)
 
-            if self.settings.zoom_region['car_fixed']:
+            if self.zoom_settings['car_fixed']:
                 # Rotate zoomed-in map surface as car steering
                 angle = self.car.car_orientation * 180 / np.pi + calibration_angle
                 zoom_map_sur = pygame.transform.rotate(zoom_map_sur, angle)
@@ -155,7 +158,7 @@ class ControlPanel:
                          self.settings.steering_wheel['topleft'])
 
         self.screen.blit(self.zoom_map_sur, self.zoom_map_rect)
-        self.screen.blit(self.frame, self.settings.zoom_region['topleft'])
+        self.screen.blit(self.frame, self.zoom_settings['topleft'])
 
         self.draw_keyboard_panel()
 
@@ -166,18 +169,18 @@ class ControlPanel:
             if car_motion[i]:
                 img = self.imgs_arrow_pressed[i]
                 # shift if pressed
-                topleft = (self.settings.keyboard_panel['arrows_topleft'][i][0] + 2,
-                           self.settings.keyboard_panel['arrows_topleft'][i][1] + 2)
+                topleft = (self.key_settings['arrows_topleft'][i][0] + 2,
+                           self.key_settings['arrows_topleft'][i][1] + 2)
             else:
                 img = self.imgs_arrow[i]
-                topleft = self.settings.keyboard_panel['arrows_topleft'][i]
+                topleft = self.key_settings['arrows_topleft'][i]
             self.screen.blit(img, topleft)
 
         if self.car.brake:
             img = self.img_space_pressed
-            topleft = (self.settings.keyboard_panel['space_topleft'][0] + 2,
-                       self.settings.keyboard_panel['space_topleft'][1] + 2)
+            topleft = (self.key_settings['space_topleft'][0] + 2,
+                       self.key_settings['space_topleft'][1] + 2)
         else:
             img = self.img_space
-            topleft = self.settings.keyboard_panel['space_topleft']
+            topleft = self.key_settings['space_topleft']
         self.screen.blit(img, topleft)

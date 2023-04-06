@@ -18,7 +18,8 @@ scale_factor = my_settings.map_screen['scale_factor']
 
 
 def check_event(settings, game_stats, workspace, car, large_car,
-                zoom_buttons, restart_button, trimetric_button, axes_buttons):
+                zoom_buttons, restart_button, trimetric_button,
+                axes_buttons, switch_buttons):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -28,56 +29,65 @@ def check_event(settings, game_stats, workspace, car, large_car,
         elif event.type == pygame.KEYUP:
             check_keyup_event(event, car, large_car)
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_x, mouse_y = pygame.mouse.get_pos()
+            mouse = pygame.mouse.get_pos()
             check_mouse_click_event(settings, game_stats, workspace, car, large_car,
                                     zoom_buttons, restart_button, trimetric_button,
-                                    axes_buttons, mouse_x, mouse_y)
+                                    axes_buttons, switch_buttons, mouse)
 
 
 def check_mouse_click_event(settings, game_stats, workspace, car, large_car,
-                            zoom_buttons, restart_button, trimetric_button, axes_buttons,
-                            mouse_x, mouse_y):
-    button_zoom_in, button_zoom_out, button_reset = zoom_buttons
-    zoom_in_click = button_zoom_in.rect.collidepoint(mouse_x, mouse_y)
-    zoom_out_click = button_zoom_out.rect.collidepoint(mouse_x, mouse_y)
-    reset_click = button_reset.rect.collidepoint(mouse_x, mouse_y)
-
-    restart_click = restart_button.rect.collidepoint(mouse_x, mouse_y)
-
-    trimetric_click = trimetric_button.rect.collidepoint(mouse_x, mouse_y)
-    if zoom_in_click:
+                            zoom_buttons, restart_button, trimetric_button,
+                            axes_buttons, switch_buttons,
+                            mouse):
+    # zoom in
+    if zoom_buttons[0].rect.collidepoint(mouse):
         settings.zoom_region['factor'] *= 1.1
         large_car.scale *= 1.1
         large_car.reset_dimensions()
-    if zoom_out_click:
+
+    # zoom out
+    if zoom_buttons[1].rect.collidepoint(mouse):
         settings.zoom_region['factor'] /= 1.1
         large_car.scale /= 1.1
         large_car.reset_dimensions()
-    if reset_click:
+
+    # zoom reset
+    if zoom_buttons[2].rect.collidepoint(mouse):
         settings.zoom_region['factor'] = settings.initial_zoom_in_factor
         large_car.scale = settings.zoom_region['factor'] * 40
         large_car.reset_dimensions()
-    if restart_click:
-        car.reset_positions()
-        car.reset_motion()
-        large_car.reset_zoomed_map()
-        game_stats.car_freeze = False
 
-    # Axes view
-    if trimetric_click:
-        # reset map orientation
+    # restart
+    if restart_button.rect.collidepoint(mouse):
+        restart_event(car, large_car, game_stats)
+
+    # reset trimetric view
+    if trimetric_button.rect.collidepoint(mouse):
         workspace.update_R(reset=True)
+
+    # rotate view
     for i in range(6):
-        if axes_buttons[i].rect.collidepoint(mouse_x, mouse_y):
+        if axes_buttons[i].rect.collidepoint(mouse):
             axis = ['x', 'y', 'z'][i // 2]
             rotation_angle = 0.1 if i % 2 == 0 else -0.1
             R = rotation(rotation_angle, axis)
             workspace.update_R(R)
 
+    # switch between game and developer mode
+    if switch_buttons[0].rect.collidepoint(mouse):
+        game_stats.game_active = not game_stats.game_active
+        restart_event(car, large_car, game_stats)
 
 
 def check_keydown_event(event, game_stats, workspace, car, large_car):
     check_car_moving(event, game_stats, car, large_car)
+
+
+def restart_event(car, large_car, game_stats):
+    car.reset_positions()
+    car.reset_motion()
+    large_car.reset_zoomed_map()
+    game_stats.car_freeze = False
 
 
 def check_car_moving(event, game_stats, car, large_car):
@@ -162,16 +172,33 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
 
         print('collision detected: ' + str(collision_point))
         game_stats.collision_point = collision_point
-        game_stats.car_freeze = True
 
         if game_stats.game_active:
+            game_stats.car_freeze = True
             car.reset_motion()
             large_car.reset_motion()
+        else:  # short blit
+            screen.blit(X, topleft)
+
+
+def draw_switch(screen, switch_buttons, game_stats):
+    if game_stats.game_active:  # developer mode disabled
+        switch_buttons[1].draw_button()
+    else:  # developer mode enabled
+        switch_buttons[0].draw_button()
+    font = pygame.font.Font(None, 25)
+    text = font.render('Developer Mode', True, (0, 0, 0))
+    text_width, text_height = text.get_size()
+    pos = switch_buttons[0].center
+    pos = (pos[0] - text_width // 2,
+           pos[1] - text_height // 2 - 25)
+    screen.blit(text, pos)
 
 
 def update_screen(settings, game_stats, screen1, screen2,
                   workspace, car, large_car, zoom_buttons, restart_button,
-                  trimetric_button, axes_buttons, latex_window, control_panel):
+                  trimetric_button, axes_buttons, switch_buttons,
+                  latex_window, control_panel):
     screen1.fill(settings.screen1['bg_color'])
     screen2.fill(settings.screen2['bg_color'])
 
@@ -184,10 +211,12 @@ def update_screen(settings, game_stats, screen1, screen2,
     large_car.draw()
     latex_window.draw()
 
+    # buttons
     for button in zoom_buttons:
         button.draw_button()
     for button in axes_buttons:
         button.draw_button()
+    draw_switch(screen1, switch_buttons, game_stats)
     restart_button.draw_button()
     trimetric_button.draw_button()
 

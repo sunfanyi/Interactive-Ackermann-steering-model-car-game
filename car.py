@@ -25,6 +25,9 @@ class Car:
         self.workspace = workspace
         self.scale = scale
 
+        self.R_view = self.workspace.R_view
+        self.offset = self.workspace.map_pos + self.settings.map_screen['topleft']
+
         self.reset_dimensions()
         self.reset_motion()
         self.reset_positions()
@@ -70,7 +73,8 @@ class Car:
 
         # State properties
         self.car_origin3d = np.float32([0, 0, self.wheel_radius])
-        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d, R=self.R_view,
+                                              offset=self.offset)
         self.last_car_origin3d = self.car_origin3d.copy()
         self.last_car_origin2d = self.car_origin2d
         self.car_orientation = 0  # theta, in radians
@@ -273,7 +277,8 @@ class Car:
         self.car_origin3d[1] += self.P_i_dot[1]  # y
         self.car_orientation += self.P_i_dot[2]  # theta
         self.steering_angle += self.P_i_dot[3]  # phi
-        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d)
+        self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d, R=self.R_view,
+                                              offset=self.offset)
 
         # one step back if car out of game window:
         if self.game_stats.game_active:

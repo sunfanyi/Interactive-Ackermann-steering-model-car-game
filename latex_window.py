@@ -17,14 +17,14 @@ import io
 
 class LatexWindow:
     def __init__(self, settings, screen, car):
-        self.settings = settings
+        self.latex_settings = settings.latex_region
         self.screen = screen
         self.car = car
 
         self.get_surf_latex()
         self.get_surf_units()
-        self.surf_updating = pygame.Surface((self.settings.latex_region['w'],
-                                             self.settings.latex_region['h']),
+        self.surf_updating = pygame.Surface((self.latex_settings['w'],
+                                             self.latex_settings['h']),
                                             pygame.SRCALPHA)
 
     def get_surf_latex(self):
@@ -76,8 +76,8 @@ class LatexWindow:
         self.surf_latex = pygame.image.load(buf)
 
     def get_surf_units(self):
-        self.surf_units = pygame.Surface((self.settings.latex_region['w'],
-                                          self.settings.latex_region['h']),
+        self.surf_units = pygame.Surface((self.latex_settings['w'],
+                                          self.latex_settings['h']),
                                          pygame.SRCALPHA)
 
         units = ['m/s', 'rad/s', 'm/s', 'm/s', 'rad/s',
@@ -108,7 +108,7 @@ class LatexWindow:
             2. Left wheels become right wheels, and vice versa.
             3. Wheels' orientation change sign as left turn becomes right turn.
         """
-        self.surf_updating.fill(self.settings.latex_region['bg_color'])
+        self.surf_updating.fill(self.latex_settings['bg_color'])
 
         values = [self.car.car_speed,  # V
                   -self.car.P_i_dot[3],  # dot_psi
