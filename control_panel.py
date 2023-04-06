@@ -11,14 +11,17 @@ import cv2
 
 
 class ControlPanel:
-    def __init__(self, settings, screen, workspace, car):
+    def __init__(self, settings, screen, game_stats, workspace, car):
         self.settings = settings
         self.screen = screen
+        self.game_stats = game_stats
         self.workspace = workspace
         self.car = car
 
         self.process_keyboard_imgs()
         self.img_steer = pygame.image.load(self.settings.steering_wheel['path'])
+
+        self.draw_frame()
 
     def process_keyboard_imgs(self):
         imgs_arrow = [pygame.image.load(
@@ -42,34 +45,53 @@ class ControlPanel:
         self.img_space = pygame.transform.scale(img_space, (w_space, h_space))
         self.img_space_pressed = pygame.transform.scale(img_space_pressed, (w_space, h_space))
 
-    def draw_steering_wheel(self):
+    def draw_frame(self):
+        r = self.settings.zoom_region['window_radius']
+        self.frame = pygame.Surface((2*r, 2*r), pygame.SRCALPHA)
+
+        if self.settings.zoom_region['edge']:
+            pygame.draw.circle(self.frame, (50, 50, 50), (r, r),
+                               r, 3)
+
+        if self.settings.zoom_region['debug_frame']:
+            pygame.draw.line(self.frame, (0, 0, 0), (0, r),
+                             (2*r, r), 2)
+            pygame.draw.line(self.frame, (0, 0, 0), (r, 0),
+                             (r, 2*r), 2)
+
+            font = pygame.font.Font(None, 25)
+            pos = (r, r)
+            X = font.render('x', True, (0, 0, 0))
+            text_width, text_height = X.get_size()
+            pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
+            self.frame.blit(X, pos)
+
+    def update_steering_wheel(self):
         angle = self.settings.car['steering_ratio'] * self.car.steering_angle * 180 / np.pi
         img_rotated = pygame.transform.rotate(self.img_steer,
                                               -angle)
         img_scaled = pygame.transform.scale(img_rotated,
                                             (self.settings.steering_wheel['w'],
                                              self.settings.steering_wheel['h']))
-        self.screen.blit(img_scaled,
-                         self.settings.steering_wheel['topleft'])
+        self.steering_wheel_sur = img_scaled
 
-    def draw_zoomed_map(self):
-        window_radius = self.settings.zoom_region['window_radius']
-        zoom_factor = self.settings.zoom_region['factor']
-
+    def update_zoomed_map(self):
+        r = self.settings.zoom_region['window_radius']
+        w = r * 2
+        h = r * 2
         topleft = self.settings.zoom_region['topleft']
-        w = window_radius * 2
-        h = window_radius * 2
+        zoom_factor = self.settings.zoom_region['factor']
 
         zoom_map_sur = pygame.Surface((w, h))
 
         # Cropping settings
         if self.settings.zoom_region['3d']:
-            zoom_radius = window_radius / zoom_factor / zoom_factor
+            zoom_radius = r / zoom_factor / zoom_factor
             img = self.workspace.map3d.astype(np.uint8)
             car_center = self.car.car_origin2d
             calibration_angle = 90
         else:
-            zoom_radius = window_radius / zoom_factor / 0.15
+            zoom_radius = r / zoom_factor / 0.15
             img = self.workspace.map2d
             car_center = self.car.car_origin3d + self.workspace.pad_size
             car_center[0], car_center[1] = car_center[1], car_center[0]
@@ -81,7 +103,6 @@ class ControlPanel:
                 self.car.car_origin3d[1] > self.settings.map_screen['ylim'] + zoom_radius:
             # if the car outside the map (white area)
             zoom_map_sur.fill((255, 255, 255))
-            pos = topleft
         else:
             # Pre-crop: (Rectangular)
             start_row = np.round(car_center[0] - zoom_radius).astype(np.int32)
@@ -95,7 +116,7 @@ class ControlPanel:
                                 interpolation=cv2.INTER_LINEAR)
             # Circular crop
             mask = np.zeros_like(scaled, dtype=np.uint8)
-            mask = cv2.circle(mask, (w // 2, h // 2), window_radius, (255, 255, 255), -1)
+            mask = cv2.circle(mask, (w // 2, h // 2), r, (255, 255, 255), -1)
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
             cropped = cv2.bitwise_and(scaled, scaled, mask=mask)
 
@@ -110,7 +131,6 @@ class ControlPanel:
 
             # Fill image to surface
             pygame.surfarray.blit_array(zoom_map_sur, res)
-            original_center = zoom_map_sur.get_rect().center
 
             if self.settings.zoom_region['car_fixed']:
                 # Rotate zoomed-in map surface as car steering
@@ -119,34 +139,27 @@ class ControlPanel:
             else:
                 zoom_map_sur = pygame.transform.rotate(zoom_map_sur, calibration_angle - 90)
 
-            # rotation will change the surface center as the surface is fixed at top left corner
-            sur_w, sur_h = zoom_map_sur.get_size()
-            pos = (topleft[0] + original_center[0] - sur_w // 2,
-                   topleft[1] + original_center[1] - sur_h // 2)
+        # rotation will change the surface center if the surface is aligned at top left corner
+        self.zoom_map_rect = zoom_map_sur.get_rect()
+        self.zoom_map_rect.center = (topleft[0] + r,
+                                     topleft[1] + r)
+        self.zoom_map_sur = zoom_map_sur
 
-        self.screen.blit(zoom_map_sur, pos)
-
-        if self.settings.zoom_region['edge']:
-            pygame.draw.circle(self.screen, (50, 50, 50), (topleft[0] + window_radius,
-                                                           topleft[1] + window_radius),
-                               window_radius, 3)
-
-        if self.settings.zoom_region['debug_frame']:
-            pygame.draw.line(self.screen, (0, 0, 0), (topleft[0], topleft[1] + window_radius),
-                             (topleft[0] + w, topleft[1] + window_radius), 2)
-            pygame.draw.line(self.screen, (0, 0, 0), (topleft[0] + window_radius, topleft[1]),
-                             (topleft[0] + window_radius, topleft[1] + w), 2)
-
-            font = pygame.font.Font(None, 25)
-            pos = (topleft[0] + window_radius, topleft[1] + window_radius)
-            X = font.render('x', True, (0, 0, 0))
-            text_width, text_height = X.get_size()
-            pos = (pos[0] - text_width // 2, pos[1] - text_height // 2)
-            self.screen.blit(X, pos)
+    def update(self):
+        self.update_zoomed_map()
+        if not self.game_stats.car_freeze:
+            self.update_steering_wheel()
 
     def draw(self):
-        self.draw_zoomed_map()
-        self.draw_steering_wheel()
+        self.screen.blit(self.steering_wheel_sur,
+                         self.settings.steering_wheel['topleft'])
+
+        self.screen.blit(self.zoom_map_sur, self.zoom_map_rect)
+        self.screen.blit(self.frame, self.settings.zoom_region['topleft'])
+
+        self.draw_keyboard_panel()
+
+    def draw_keyboard_panel(self):
         car_motion = [self.car.moving_fwd, self.car.moving_bwd,
                       self.car.turning_left, self.car.turning_right]
         for i in range(4):

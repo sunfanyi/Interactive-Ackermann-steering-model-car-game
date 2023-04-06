@@ -25,17 +25,17 @@ def check_event(settings, game_stats, car, large_car,
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            check_keydown_event(event, car, large_car)
+            check_keydown_event(event, game_stats, car, large_car)
         elif event.type == pygame.KEYUP:
             check_keyup_event(event, car, large_car)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            check_mouse_click_event(settings, car, large_car,
+            check_mouse_click_event(settings, game_stats, car, large_car,
                                     zoom_buttons, restart_button,
                                     mouse_x, mouse_y)
 
 
-def check_mouse_click_event(settings, car, large_car,
+def check_mouse_click_event(settings, game_stats, car, large_car,
                             zoom_buttons, restart_button,
                             mouse_x, mouse_y):
     button_zoom_in, button_zoom_out, button_reset = zoom_buttons
@@ -49,6 +49,7 @@ def check_mouse_click_event(settings, car, large_car,
         settings.zoom_region['factor'] *= 1.1
         large_car.scale *= 1.1
         large_car.reset_dimensions()
+        print(1)
     if zoom_out_click:
         settings.zoom_region['factor'] /= 1.1
         large_car.scale /= 1.1
@@ -60,34 +61,41 @@ def check_mouse_click_event(settings, car, large_car,
     if restart_click:
         car.reset_positions()
         large_car.reset_zoomed_map()
+        game_stats.car_freeze = False
 
 
-def check_keydown_event(event, car, large_car):
-    check_car_moving(event, car, large_car)
+def check_keydown_event(event, game_stats, car, large_car):
+    check_car_moving(event, game_stats, car, large_car)
 
 
-def check_car_moving(event, car, large_car):
+def check_car_moving(event, game_stats, car, large_car):
     """
     Note Y-axis is flipped, so left key actually represents turning right
     car.turning_left and car.turning_right actually represent turning in the
     original coordinate system (following right-hand rule) before flipping.
     In the flipped coordinate system, they are opposite.
     """
-    if event.key == pygame.K_UP:
+    if event.key == pygame.K_UP:  # move forward
         car.moving_fwd = True
         large_car.moving_fwd = True
-    elif event.key == pygame.K_DOWN:
+        game_stats.car_freeze = False
+        car.step_back()
+    elif event.key == pygame.K_DOWN:  # move backward
         car.moving_bwd = True
         large_car.moving_bwd = True
+        game_stats.car_freeze = False
+        car.step_back()
     elif event.key == pygame.K_RIGHT:  # turn left
         car.turning_left = True
         large_car.turning_left = True
     elif event.key == pygame.K_LEFT:  # turn right
         car.turning_right = True
         large_car.turning_right = True
-    elif event.key == pygame.K_SPACE:
+    elif event.key == pygame.K_SPACE:  # brake
         car.brake = True
         large_car.brake = True
+        game_stats.car_freeze = False
+        car.step_back()
 
 
 def check_keyup_event(event, car, large_car):
@@ -108,7 +116,7 @@ def check_keyup_event(event, car, large_car):
         large_car.brake = False
 
 
-def detect_collision(game_stats, screen, car, large_car, red_line, restart_button):
+def detect_collision(game_stats, screen, car, large_car, red_line):
     if car.car_origin3d[0] < 1000 or car.car_origin3d[0] > 4000 or \
             car.car_origin3d[1] < 500 or car.car_origin3d[1] > 2000:
         return
@@ -118,6 +126,15 @@ def detect_collision(game_stats, screen, car, large_car, red_line, restart_butto
     x2, y2 = np.round(car.body_lines[1][0][:2]).astype(np.int32)  # FR
     x3, y3 = np.round(car.body_lines[3][0][:2]).astype(np.int32)  # RL
     x4, y4 = np.round(car.body_lines[2][0][:2]).astype(np.int32)  # RR
+
+    if game_stats.car_freeze:
+        # if collision
+        font = pygame.font.Font(None, 38)
+        X = font.render('x', True, (0, 0, 0))
+        text_width, text_height = X.get_size()
+        topleft = (game_stats.collision_point[0] - text_width // 2,
+                   game_stats.collision_point[1] - text_height // 2)
+        screen.blit(X, topleft)
 
     if red_line[y1, x1] or red_line[y2, x2] or red_line[y3, x3] or red_line[y4, x4]:
         if red_line[y1, x1]:
@@ -131,50 +148,12 @@ def detect_collision(game_stats, screen, car, large_car, red_line, restart_butto
 
         pos2d = point_3d_to_2d(collision_pos[0], collision_pos[1], 0)
         print('collision detected: ' + str(collision_pos))
-
-        font = pygame.font.Font(None, 38)
-        X = font.render('x', True, (0, 0, 0))
-        text_width, text_height = X.get_size()
-        pos2d = (pos2d[0] - text_width // 2, pos2d[1] - text_height // 2)
-        screen.blit(X, pos2d)
-        pygame.display.update()
+        game_stats.collision_point = pos2d
+        game_stats.car_freeze = True
 
         if game_stats.game_active:
-            car.moving_fwd = False
-            car.moving_bwd = False
-            car.turning_left = False
-            car.turning_right = False
-            large_car.moving_fwd = False
-            large_car.moving_bwd = False
-            large_car.turning_left = False
-            large_car.turning_right = False
-            car.step_back()
-            car.car_speed = 1e-20
-            car.steering_angle = 0
-
-            paused = True
-            while paused:
-                # wait for key press
-                for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_UP:
-                            car.moving_fwd = True
-                            large_car.moving_fwd = True
-                            paused = False
-                        elif event.key == pygame.K_DOWN:
-                            car.moving_bwd = True
-                            large_car.moving_bwd = True
-                            paused = False
-                        elif event.key == pygame.K_SPACE:
-                            car.brake = True
-                            paused = False
-                    elif event.type == pygame.MOUSEBUTTONDOWN:
-                        mouse_x, mouse_y = pygame.mouse.get_pos()
-                        restart_click = restart_button.rect.collidepoint(mouse_x, mouse_y)
-                        if restart_click:
-                            car.reset_positions()
-                            large_car.reset_zoomed_map()
-                            paused = False
+            car.reset_motion()
+            large_car.reset_motion()
 
 
 def update_screen(settings, game_stats, screen1, screen2,
@@ -195,6 +174,8 @@ def update_screen(settings, game_stats, screen1, screen2,
     for button in zoom_buttons:
         button.draw_button()
     restart_button.draw_button()
+
+    detect_collision(game_stats, screen1, car, large_car, workspace.red_line)
 
 
 def rotation(theta, direction):
@@ -234,6 +215,8 @@ def trimetric_view():
 
 
 R_trimetic = trimetric_view()
+
+
 def draw_line(screen, line, color=(0, 0, 0), linewidth=1, R=R_trimetic, offset=origin2d):
     p1 = line[0]
     p2 = line[1]

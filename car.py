@@ -24,8 +24,44 @@ class Car:
         self.game_stats = game_stats
         self.scale = scale
 
+        # View
+        self.R_view = gf.trimetric_view()
+        self.offset = self.settings.map_screen['origin2d']
+
         self.reset_dimensions()
+        self.reset_motion()
         self.reset_positions()
+
+        self.apply_transformations()
+
+    def reset_dimensions(self):
+        self.length = 3.3 * self.scale
+        self.width = 2.2 * self.scale
+        self.height = 1.5 * self.scale
+        self.wheel_radius = 0.6 * self.scale
+        self.wheel_width = 0.5 * self.scale
+        self.wheel_offset = 0.2 * self.scale
+        self.wheel_base = 2 * self.scale
+
+        self.get_car_lines()
+
+    def reset_motion(self):
+        # Car control
+        self.moving_fwd = False
+        self.moving_bwd = False
+        self.turning_left = False
+        self.turning_right = False
+        self.brake = False
+
+        # Kinematics properties (update in inverse kinematics)
+        self.steering_angle = 0   # psi, in radians
+        # non-zero initial V, otherwise ICR = nan at the beginning
+        # beta will be zero even with steering when game starts until assign a speed
+        self.car_speed = 1e-10  # in m/s, avoid divided by zero
+        self.P_i_dot = np.float32([0, 0, 0, 0])  # X dot, Y dot, theta dot, psi dot
+        self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
+        self.wheels_speed = np.float32([0, 0, 0, 0])  # in rad/s, 4 wheels
+        self.ICR = np.nan  # instantaneous center of rotation
 
     def reset_positions(self):
         # indicator of how many cycles the wheels have turned
@@ -41,41 +77,7 @@ class Car:
         self.last_car_origin3d = self.car_origin3d.copy()
         self.last_car_origin2d = self.car_origin2d
         self.car_orientation = 0  # theta, in radians
-        self.steering_angle = 0   # psi, in radians
-        # non-zero initial V, otherwise ICR = nan at the beginning
-        # beta will be zero even with steering when game starts until assign a speed
-        self.car_speed = 1e-10  # in m/s, avoid divided by zero
         self.steering_rate = 0  # in rad/s
-
-        # Kinematics properties (update in inverse kinematics)
-        self.wheels_orientation = np.float32([0, 0, 0, 0])  # in radians, 4 wheels
-        self.P_i_dot = np.float32([0, 0, 0, 0])  # X dot, Y dot, theta dot, psi dot
-        self.wheels_speed = np.float32([0, 0, 0, 0])  # in rad/s, 4 wheels
-        self.ICR = np.nan  # instantaneous center of rotation
-
-        # View
-        self.R_view = gf.trimetric_view()
-        self.offset = self.settings.map_screen['origin2d']
-
-        # Car control
-        self.moving_fwd = False
-        self.moving_bwd = False
-        self.turning_left = False
-        self.turning_right = False
-        self.brake = False
-
-        self.apply_transformations()
-
-    def reset_dimensions(self):
-        self.length = 3.3 * self.scale
-        self.width = 2.2 * self.scale
-        self.height = 1.5 * self.scale
-        self.wheel_radius = 0.6 * self.scale
-        self.wheel_width = 0.5 * self.scale
-        self.wheel_offset = 0.2 * self.scale
-        self.wheel_base = 2 * self.scale
-
-        self.get_car_lines()
 
     def get_car_lines(self):
         """

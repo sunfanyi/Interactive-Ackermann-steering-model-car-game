@@ -42,24 +42,23 @@ def run_game():
                     for label in ['+', '-', 'R']]
     restart_button = RestartButton(settings, screen1, 'Restart')
     latex_window = LatexWindow(settings, screen2, my_car)
-    control_panel = ControlPanel(settings, screen2, workspace, my_car)
+    control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
 
     avg = 0
     i = 0
     while True:
         start = time.time()
 
-        # must be before update()
-        gf.detect_collision(game_stats, screen, my_car, my_large_car,
-                            workspace.red_line, restart_button)
         screen.fill((255, 255, 255))
 
         gf.check_event(settings, game_stats, my_car, my_large_car,
                        zoom_buttons, restart_button)
 
-        my_car.update()
-        my_large_car.update_zoomed_map(my_car.car_orientation,
-                                       my_car.wheels_orientation)
+        if not game_stats.car_freeze:
+            my_car.update()
+            my_large_car.update_zoomed_map(my_car.car_orientation,
+                                           my_car.wheels_orientation)
+        control_panel.update()
         latex_window.update()
 
         gf.update_screen(settings, game_stats, screen1, screen2,

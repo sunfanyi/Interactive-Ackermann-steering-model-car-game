@@ -26,7 +26,6 @@ class Workspace:
         self.map2d = self.pad_2D_map(img)
 
         _, self.red_line = extract_color(img, 'R')
-        # self.red_line = self.pad_2D_map(red_line)
 
     def get_3D_map(self, img):
         img_w = img.shape[1]
