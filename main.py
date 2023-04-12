@@ -77,7 +77,7 @@ def run_game():
                          trimetric_button, axes_buttons, switch_buttons, latex_window, control_panel)
 
         pygame.display.update()
-
+        # print(my_car.car_orientation)
         # i += 1
         # end = time.time()
         # last = avg

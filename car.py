@@ -72,12 +72,16 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # State properties
-        self.car_origin3d = np.float32([0, 0, self.wheel_radius])
+        # self.car_origin3d = np.float32([0, 0, self.wheel_radius])
+        self.car_origin3d = np.float32([self.workspace.blue_start[0],
+                                        self.workspace.blue_start[1],
+                                        self.wheel_radius])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d, R=self.R_view,
                                               offset=self.offset)
         self.last_car_origin3d = self.car_origin3d.copy()
         self.last_car_origin2d = self.car_origin2d
-        self.car_orientation = 0  # theta, in radians
+        # self.car_orientation = 0  # theta, in radians
+        self.car_orientation = -1.7  # theta, in radians
         self.steering_rate = 0  # in rad/s
 
     def get_car_lines(self):

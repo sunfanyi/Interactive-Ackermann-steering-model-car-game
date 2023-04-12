@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 
 import game_function as gf
-from tools_cv import extract_color
+from tools_cv import extract_color, mask2xy
 
 
 class Workspace:
@@ -23,13 +23,14 @@ class Workspace:
         self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         self.R_view = gf.trimetric_view()
-        self.get_3D_map()
-        self.map2d = self.pad_2D_map()
-        self.get_axes()
+        self._get_3D_map()
+        self.map2d = self._pad_2D_map()
+        self._get_axes()
 
-        _, self.red_line = extract_color(self.img, 'R')
+        # _, self.red_line = extract_color(self.img, 'R')
+        self._extract_map_features()
 
-    def get_3D_map(self):
+    def _get_3D_map(self):
         img = self.img
         img_w = img.shape[1]
         img_h = img.shape[0]
@@ -64,7 +65,7 @@ class Workspace:
 
         self.map3d = pygame.surfarray.make_surface(map3d)
 
-    def pad_2D_map(self):
+    def _pad_2D_map(self):
         """
         Pad edges with zero for cropping the zoomed in region
         when the car is in the boundary of the map
@@ -80,7 +81,7 @@ class Workspace:
 
         return pad
 
-    def get_axes(self):
+    def _get_axes(self):
         self.axes = pygame.surface.Surface((self.map_settings['w'],
                                             self.map_settings['h']),
                                            pygame.SRCALPHA)
@@ -138,6 +139,44 @@ class Workspace:
             tick_label = tick_font.render(str(i), True, tick_color)
             self.axes.blit(tick_label, (tick_x, tick_y))
 
+    def _extract_map_features(self):
+        """
+        Extract features of the map, including red line, blue start line,
+        blue end line, green end line.
+        # return:
+        red_line: binary mask of the red line
+        blue_start: xy central coordinates of the bottom right blue circle
+        blue_end: xy central coordinates of the top left blue circle
+        start_mask: binary mask of the blue start circle
+        end_mask: binary mask of the blue end circle
+        green_end: xy central coordinates of the green circle for the manipulator
+        """
+        _, mask_R = extract_color(self.img, 'R')
+        _, mask_G = extract_color(self.img, 'G')
+        _, mask_B = extract_color(self.img, 'B')
+
+        G_coords = mask2xy(mask_G)
+        B_coords = mask2xy(mask_B)
+
+        # Red
+        self.red_line = mask_R
+
+        # Blue
+        circle1 = B_coords[B_coords[:, 0] < 2000]  # left
+        circle2 = B_coords[B_coords[:, 0] > 2000]  # right
+
+        self.blue_end = np.mean(circle1, axis=0)
+        self.blue_start = np.mean(circle2, axis=0)
+
+        self.start_mask = mask_B
+        self.start_mask[:2000, :] = 0
+
+        self.end_mask = mask_B
+        self.end_mask[2000:, :] = 0
+
+        # Green
+        self.green_end = np.mean(G_coords, axis=0)
+
     def update_R(self, R=np.eye(3), reset=False):
         if reset:
             self.R_view = gf.trimetric_view()
@@ -148,8 +187,8 @@ class Workspace:
                 self.R_view = np.matmul(R, self.R_view)
             else:
                 raise ValueError("Unknown description of orientation")
-        self.get_3D_map()
-        self.get_axes()
+        self._get_3D_map()
+        self._get_axes()
 
     def draw(self):
         self.screen.blit(self.map3d, self.map_settings['topleft'])
