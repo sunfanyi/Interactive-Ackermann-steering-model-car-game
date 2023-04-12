@@ -78,10 +78,11 @@ class Car:
                                         self.wheel_radius])
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d, R=self.R_view,
                                               offset=self.offset)
+        self.car_orientation = -1.7  # theta, in radians
         self.last_car_origin3d = self.car_origin3d.copy()
         self.last_car_origin2d = self.car_origin2d
+        self.last_orientation = self.car_orientation
         # self.car_orientation = 0  # theta, in radians
-        self.car_orientation = -1.7  # theta, in radians
         self.steering_rate = 0  # in rad/s
 
     def get_car_lines(self):
@@ -130,7 +131,7 @@ class Car:
                                              bot_rear_left + x_shift + z_shift,
                                              bot_rear_right + x_shift + z_shift])
 
-        def get_each_wheel(center, y_shift, num_points=20):
+        def _get_each_wheel(center, y_shift, num_points=20):
             r = self.wheel_radius
 
             center1 = center + y_shift
@@ -146,10 +147,10 @@ class Car:
             self.wheel_curves_local.append([np.array([x1, y1, z1]), np.array([x2, y2, z2])])
 
         self.wheel_curves_local = []
-        get_each_wheel(self.wheel_centers_local[0], y_shift)
-        get_each_wheel(self.wheel_centers_local[1], y_shift)
-        get_each_wheel(self.wheel_centers_local[2], y_shift)
-        get_each_wheel(self.wheel_centers_local[3], y_shift)
+        _get_each_wheel(self.wheel_centers_local[0], y_shift)
+        _get_each_wheel(self.wheel_centers_local[1], y_shift)
+        _get_each_wheel(self.wheel_centers_local[2], y_shift)
+        _get_each_wheel(self.wheel_centers_local[3], y_shift)
 
     def wheel_spinning_animation(self):
         """
@@ -212,7 +213,7 @@ class Car:
         for line in self.body_lines_local:
             line = line.T
             line = np.vstack([line, np.ones(line.shape[1])])
-            line_universe = np.matmul(self.T_body, line)  # [4, 2], 4=[x, y, z, 1], 2=[p1, p2]
+            line_universe = np.matmul(self.T_body, line).astype(np.int32)  # [4, 2], 4=[x, y, z, 1], 2=[p1, p2]
             self.body_lines.append(line_universe[:3, :].T)
 
         # apply transformation matrix T to each wheel curve
@@ -222,13 +223,14 @@ class Car:
             curve2 = self.wheel_curves_local[i][1] - self.wheel_centers_local[i].reshape(3, 1)
             curve1 = np.vstack([curve1, np.ones(curve1.shape[1])])
             curve2 = np.vstack([curve2, np.ones(curve2.shape[1])])
-            curve1_universe = np.matmul(self.T_wheels[i], curve1).astype('float')
-            curve2_universe = np.matmul(self.T_wheels[i], curve2).astype('float')
+            curve1_universe = np.matmul(self.T_wheels[i], curve1).astype(np.float32)
+            curve2_universe = np.matmul(self.T_wheels[i], curve2).astype(np.float32)
             self.wheel_curves.append([curve1_universe[:3, :].T, curve2_universe[:3, :].T])
 
     def step_back(self):
-        self.car_origin3d = self.last_car_origin3d
+        self.car_origin3d = self.last_car_origin3d.copy()
         self.car_origin2d = self.last_car_origin2d
+        self.car_orientation = self.last_orientation
 
     def update(self):
         """
@@ -275,8 +277,11 @@ class Car:
         # after getting inputs (speed, steering rate), feed to inverse kinematics
         calc_inverse(self)
 
-        self.last_car_origin3d = self.car_origin3d.copy()
-        self.last_car_origin2d = self.car_origin2d
+        if np.any(np.abs(self.car_origin3d - self.last_car_origin3d) >= 1):
+            self.last_car_origin3d = self.car_origin3d.copy()
+            self.last_car_origin2d = self.car_origin2d
+            self.last_orientation = self.car_orientation
+
         self.car_origin3d[0] += self.P_i_dot[0]  # x
         self.car_origin3d[1] += self.P_i_dot[1]  # y
         self.car_orientation += self.P_i_dot[2]  # theta
@@ -332,9 +337,9 @@ class Car:
 
 
 class LargeCar(Car):
-    def __init__(self, settings, screen, workspace, scale=40):
+    def __init__(self, settings, screen, game_stats, workspace, scale=40):
         zoomed_scale = scale * settings.zoom_region['factor']
-        super().__init__(settings, screen, None, workspace, scale=zoomed_scale)
+        super().__init__(settings, screen, game_stats, workspace, scale=zoomed_scale)
         self.reset_zoomed_map()
 
     def reset_zoomed_map(self):
@@ -350,10 +355,12 @@ class LargeCar(Car):
                        topleft[1] + self.settings.zoom_region['window_radius'])
 
     def update_zoomed_map(self, car_orientation, wheels_orientation):
-        if self.settings.zoom_region['car_fixed']:
-            self.car_orientation = -np.pi/2
-        else:
-            self.car_orientation = car_orientation
-        self.wheels_orientation = wheels_orientation
+        if not self.game_stats.car_freeze:
+            # keep it frozen otherwise
+            if self.settings.zoom_region['car_fixed']:
+                self.car_orientation = -np.pi/2
+            else:
+                self.car_orientation = car_orientation
+            self.wheels_orientation = wheels_orientation
 
         self.apply_transformations()

@@ -37,7 +37,7 @@ def run_game():
 
     workspace = Workspace(settings, screen1)
     my_car = Car(settings, screen1, game_stats, workspace)
-    my_large_car = LargeCar(settings, screen2, workspace)
+    my_large_car = LargeCar(settings, screen2, game_stats, workspace)
 
     latex_window = LatexWindow(settings, screen2, my_car)
     control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
@@ -63,11 +63,8 @@ def run_game():
                        axes_buttons, switch_buttons)
 
         my_car.update()
-
-        if not game_stats.car_freeze:
-            # keep it frozen
-            my_large_car.update_zoomed_map(my_car.car_orientation,
-                                           my_car.wheels_orientation)
+        my_large_car.update_zoomed_map(my_car.car_orientation,
+                                       my_car.wheels_orientation)
 
         control_panel.update()
         latex_window.update()
@@ -75,7 +72,7 @@ def run_game():
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
                          trimetric_button, axes_buttons, switch_buttons, latex_window, control_panel)
-
+        # print(my_car.car_origin3d)
         pygame.display.update()
         # print(my_car.car_orientation)
         # i += 1

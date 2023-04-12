@@ -100,13 +100,17 @@ def check_car_moving(event, game_stats, car, large_car):
     if event.key == pygame.K_UP:  # move forward
         car.moving_fwd = True
         large_car.moving_fwd = True
+        if game_stats.car_freeze:
+            car.step_back()
         game_stats.car_freeze = False
-        car.step_back()
+        # car.step_back()
     elif event.key == pygame.K_DOWN:  # move backward
         car.moving_bwd = True
         large_car.moving_bwd = True
+        if game_stats.car_freeze:
+            car.step_back()
         game_stats.car_freeze = False
-        car.step_back()
+        # car.step_back()
     elif event.key == pygame.K_RIGHT:  # turn left
         car.turning_left = True
         large_car.turning_left = True
@@ -116,8 +120,10 @@ def check_car_moving(event, game_stats, car, large_car):
     elif event.key == pygame.K_SPACE:  # brake
         car.brake = True
         large_car.brake = True
+        if game_stats.car_freeze:
+            car.step_back()
         game_stats.car_freeze = False
-        car.step_back()
+        # car.step_back()
 
 
 def check_keyup_event(event, car, large_car):
@@ -144,10 +150,25 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
         return
 
     # get 3d corner points
-    x1, y1 = np.round(car.body_lines[0][0][:2]).astype(np.int32)  # FL
-    x2, y2 = np.round(car.body_lines[1][0][:2]).astype(np.int32)  # FR
-    x3, y3 = np.round(car.body_lines[3][0][:2]).astype(np.int32)  # RL
-    x4, y4 = np.round(car.body_lines[2][0][:2]).astype(np.int32)  # RR
+    # FL = np.round(car.body_lines[0][0][:2]).astype(np.int32)  # FL
+    # FR = np.round(car.body_lines[1][0][:2]).astype(np.int32)  # FR
+    # RL = np.round(car.body_lines[3][0][:2]).astype(np.int32)  # RL
+    # RR = np.round(car.body_lines[2][0][:2]).astype(np.int32)  # RR
+    FL = car.body_lines[0][0][:2]
+    FR = car.body_lines[1][0][:2]
+    RL = car.body_lines[3][0][:2]
+    RR = car.body_lines[2][0][:2]
+
+    def _get_line(corner1, corner2):
+        line = [np.linspace(corner1[0], corner2[0], 10),
+                np.linspace(corner1[1], corner2[1], 10)]
+
+        return np.round(line).astype(np.int32)
+
+    edges = np.concatenate([_get_line(FL, FR),
+                            _get_line(FR, RR),
+                            _get_line(RR, RL),
+                            _get_line(RL, FL)], axis=1).T
 
     pos2d = point_3d_to_2d(game_stats.collision_point[0], game_stats.collision_point[1], 0,
                            R=car.R_view, offset=car.offset)
@@ -160,23 +181,15 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
         # if collision
         screen.blit(X, topleft)
 
-    if red_line[y1, x1] or red_line[y2, x2] or red_line[y3, x3] or red_line[y4, x4]:
-        if red_line[y1, x1]:
-            collision_point = (x1, y1)
-        if red_line[y2, x2]:
-            collision_point = (x2, y2)
-        if red_line[y3, x3]:
-            collision_point = (x3, y3)
-        if red_line[y4, x4]:
-            collision_point = (x4, y4)
-
-        print('collision detected: ' + str(collision_point))
+    if np.any(red_line[edges[:, 1], edges[:, 0]]):
+        collision_point = edges[np.argwhere(red_line[edges[:, 1], edges[:, 0]])][0][0]
+        # print('collision detected: ' + str(collision_point))
         game_stats.collision_point = collision_point
 
         if game_stats.game_active:
             game_stats.car_freeze = True
             car.reset_motion()
-            large_car.reset_motion()
+            large_car.moving_fwd = False  # suppress wheel spinning
         else:  # short blit
             screen.blit(X, topleft)
 
