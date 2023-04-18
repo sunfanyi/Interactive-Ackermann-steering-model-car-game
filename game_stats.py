@@ -9,6 +9,7 @@
 class GameStats:
     def __init__(self):
         self.game_active = True
+        self.started = False  # start when touching the starting point
 
         # for collision detection
         self.car_freeze = False

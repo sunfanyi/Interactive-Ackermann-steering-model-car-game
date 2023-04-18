@@ -72,8 +72,8 @@ def run_game():
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
                          trimetric_button, axes_buttons, switch_buttons, latex_window, control_panel)
-        # print(my_car.car_origin3d)
         pygame.display.update()
+        # print(my_car.car_origin3d)
         # print(my_car.car_orientation)
         # i += 1
         # end = time.time()

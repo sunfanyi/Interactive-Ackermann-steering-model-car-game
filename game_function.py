@@ -88,6 +88,7 @@ def restart_event(car, large_car, game_stats):
     car.reset_motion()
     large_car.reset_zoomed_map()
     game_stats.car_freeze = False
+    game_stats.started = False
 
 
 def check_car_moving(event, game_stats, car, large_car):
@@ -144,10 +145,14 @@ def check_keyup_event(event, car, large_car):
         large_car.brake = False
 
 
-def detect_collision(game_stats, screen, car, large_car, red_line):
+def detect_collision(game_stats, screen, car, large_car, workspace):
     if car.car_origin3d[0] < 1000 or car.car_origin3d[0] > 4000 or \
             car.car_origin3d[1] < 500 or car.car_origin3d[1] > 2500:
         return
+
+    red_line = workspace.red_line
+    start_mask = workspace.start_mask
+    end_mask = workspace.end_mask
 
     # get 3d corner points
     # FL = np.round(car.body_lines[0][0][:2]).astype(np.int32)  # FL
@@ -170,6 +175,7 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
                             _get_line(RR, RL),
                             _get_line(RL, FL)], axis=1).T
 
+    # ============================= check collision with red line =============================
     pos2d = point_3d_to_2d(game_stats.collision_point[0], game_stats.collision_point[1], 0,
                            R=car.R_view, offset=car.offset)
     font = pygame.font.Font(None, 38)
@@ -178,7 +184,7 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
     topleft = (pos2d[0] - text_width // 2,
                pos2d[1] - text_height // 2)
     if game_stats.car_freeze:
-        # if collision
+        # if collision with red line
         screen.blit(X, topleft)
 
     if np.any(red_line[edges[:, 1], edges[:, 0]]):
@@ -192,6 +198,24 @@ def detect_collision(game_stats, screen, car, large_car, red_line):
             large_car.moving_fwd = False  # suppress wheel spinning
         else:  # short blit
             screen.blit(X, topleft)
+
+    if not game_stats.started:
+        # ============================= check collision with blue start mask =============================
+        if start_mask[int(car.car_origin3d[1]),
+                      int(car.car_origin3d[0])]:
+            print('arriving at start point')
+            car.reset_positions('start')
+            car.reset_motion()
+            game_stats.started = True
+            large_car.moving_fwd = False  # suppress wheel spinning
+            time.sleep(0.3)
+    else:
+        # ============================= check collision with blue end mask =============================
+        if end_mask[int(car.car_origin3d[1]),
+                    int(car.car_origin3d[0])]:
+            print('arriving at end point')
+            game_stats.started = False
+            time.sleep(0.3)
 
 
 def draw_switch(screen, switch_buttons, game_stats):
@@ -234,7 +258,7 @@ def update_screen(settings, game_stats, screen1, screen2,
     trimetric_button.draw_button()
 
     detect_collision(game_stats, screen1, car, large_car,
-                     workspace.red_line)
+                     workspace)
 
 
 def rotation(theta, direction):

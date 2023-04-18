@@ -168,11 +168,11 @@ class Workspace:
         self.blue_end = np.mean(circle1, axis=0)
         self.blue_start = np.mean(circle2, axis=0)
 
-        self.start_mask = mask_B
-        self.start_mask[:2000, :] = 0
+        self.start_mask = mask_B.copy()
+        self.start_mask[:2000, :] = False
 
-        self.end_mask = mask_B
-        self.end_mask[2000:, :] = 0
+        self.end_mask = mask_B.copy()
+        self.end_mask[2000:, :] = False
 
         # Green
         self.green_end = np.mean(G_coords, axis=0)

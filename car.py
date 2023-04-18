@@ -18,7 +18,7 @@ class Car:
     so as the car, so the left wheels are actually on the right side from the screen.
     When pressing the left key, the car actually turns right, but flipped on the screen.
     """
-    def __init__(self, settings, screen, game_stats, workspace, scale=40):
+    def __init__(self, settings, screen, game_stats, workspace, scale=39):
         self.settings = settings
         self.screen = screen
         self.game_stats = game_stats
@@ -32,16 +32,15 @@ class Car:
         self.reset_motion()
         self.reset_positions()
 
-        self.apply_transformations()
 
     def reset_dimensions(self):
         self.length = 3.3 * self.scale
-        self.width = 2.2 * self.scale
+        self.width = 2. * self.scale
         self.height = 1.5 * self.scale
-        self.wheel_radius = 0.6 * self.scale
-        self.wheel_width = 0.5 * self.scale
+        self.wheel_radius = 0.57 * self.scale
+        self.wheel_width = 0.48 * self.scale
         self.wheel_offset = 0.2 * self.scale
-        self.wheel_base = 2 * self.scale
+        self.wheel_base = 1.9 * self.scale
 
         self.get_car_lines()
 
@@ -63,7 +62,7 @@ class Car:
         self.wheels_speed = np.float32([0, 0, 0, 0])  # in rad/s, 4 wheels
         self.ICR = np.nan  # instantaneous center of rotation
 
-    def reset_positions(self):
+    def reset_positions(self, location='IC_logo'):
         # indicator of how many cycles the wheels have turned
         self.wheel_phi_counter = 0
 
@@ -72,18 +71,29 @@ class Car:
         self.T_wheels = [np.eye(4)] * 4  # FL, FR, RL, RR
 
         # State properties
-        # self.car_origin3d = np.float32([0, 0, self.wheel_radius])
-        self.car_origin3d = np.float32([self.workspace.blue_start[0],
-                                        self.workspace.blue_start[1],
-                                        self.wheel_radius])
+        if location == 'IC_logo':
+            self.car_origin3d = np.float32([2900, 2310, self.wheel_radius])
+            self.car_orientation = -1.575  # theta, in radians
+        elif location == 'start':
+            self.car_origin3d = np.float32([self.workspace.blue_start[0],
+                                            self.workspace.blue_start[1],
+                                            self.wheel_radius])
+            self.car_orientation = -1.7  # theta, in radians
+        elif location == 'origin':
+            self.car_origin3d = np.float32([0, 0, self.wheel_radius])
+            self.car_orientation = 0  # theta, in radians
+        else:
+            raise ValueError('Invalid location')
+
         self.car_origin2d = gf.point_3d_to_2d(*self.car_origin3d, R=self.R_view,
                                               offset=self.offset)
-        self.car_orientation = -1.7  # theta, in radians
         self.last_car_origin3d = self.car_origin3d.copy()
         self.last_car_origin2d = self.car_origin2d
         self.last_orientation = self.car_orientation
         # self.car_orientation = 0  # theta, in radians
         self.steering_rate = 0  # in rad/s
+
+        self.apply_transformations()
 
     def get_car_lines(self):
         """
@@ -337,7 +347,7 @@ class Car:
 
 
 class LargeCar(Car):
-    def __init__(self, settings, screen, game_stats, workspace, scale=40):
+    def __init__(self, settings, screen, game_stats, workspace, scale=39):
         zoomed_scale = scale * settings.zoom_region['factor']
         super().__init__(settings, screen, game_stats, workspace, scale=zoomed_scale)
         self.reset_zoomed_map()
