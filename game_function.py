@@ -189,7 +189,6 @@ def detect_collision(game_stats, screen, car, large_car, workspace):
 
     if np.any(red_line[edges[:, 1], edges[:, 0]]):
         collision_point = edges[np.argwhere(red_line[edges[:, 1], edges[:, 0]])][0][0]
-        # print('collision detected: ' + str(collision_point))
         game_stats.collision_point = collision_point
 
         if game_stats.game_active:
@@ -203,7 +202,6 @@ def detect_collision(game_stats, screen, car, large_car, workspace):
         # ============================= check collision with blue start mask =============================
         if start_mask[int(car.car_origin3d[1]),
                       int(car.car_origin3d[0])]:
-            print('arriving at start point')
             car.reset_positions('start')
             car.reset_motion()
             game_stats.started = True
@@ -213,7 +211,6 @@ def detect_collision(game_stats, screen, car, large_car, workspace):
         # ============================= check collision with blue end mask =============================
         if end_mask[int(car.car_origin3d[1]),
                     int(car.car_origin3d[0])]:
-            print('arriving at end point')
             game_stats.started = False
             time.sleep(0.3)
 
@@ -235,7 +232,7 @@ def draw_switch(screen, switch_buttons, game_stats):
 def update_screen(settings, game_stats, screen1, screen2,
                   workspace, car, large_car, zoom_buttons, restart_button,
                   trimetric_button, axes_buttons, switch_buttons,
-                  latex_window, control_panel):
+                  latex_window, control_panel, msg_box):
     screen1.fill(settings.screen1['bg_color'])
     screen2.fill(settings.screen2['bg_color'])
 
@@ -247,6 +244,7 @@ def update_screen(settings, game_stats, screen1, screen2,
     control_panel.draw()
     large_car.draw()
     latex_window.draw()
+    msg_box.show_msg()
 
     # buttons
     for button in zoom_buttons:

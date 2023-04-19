@@ -16,6 +16,7 @@ from button import TextButton, ImgButton
 from latex_window import LatexWindow
 from game_stats import GameStats
 from control_panel import ControlPanel
+from message_box import MessageBox
 
 import numpy as np
 
@@ -41,6 +42,7 @@ def run_game():
 
     latex_window = LatexWindow(settings, screen2, my_car)
     control_panel = ControlPanel(settings, screen2, game_stats, workspace, my_car)
+    msg_box = MessageBox(settings, screen1, game_stats)
 
     zoom_buttons = [TextButton(setting, screen) for setting in
                     [settings.but_zoom_in, settings.but_zoom_out, settings.but_zoom_reset]]
@@ -68,10 +70,12 @@ def run_game():
 
         control_panel.update()
         latex_window.update()
+        msg_box.update()
 
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
-                         trimetric_button, axes_buttons, switch_buttons, latex_window, control_panel)
+                         trimetric_button, axes_buttons, switch_buttons,
+                         latex_window, control_panel, msg_box)
         pygame.display.update()
         # print(my_car.car_origin3d)
         # print(my_car.car_orientation)

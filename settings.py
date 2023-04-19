@@ -59,6 +59,15 @@ class Settings:
         # 'description': 'Fixed',
     }
 
+    message_box = {
+        'w': 500,
+        'h': 200,
+        'topleft': (140, 10),
+        'text_color': (0, 0, 0),
+        'font_size': 35,
+        'bg_color': (255, 255, 255),
+    }
+
     # ======================================== Screen 2 ======================================== #
     screen2 = {
         'topleft': (850, 0),

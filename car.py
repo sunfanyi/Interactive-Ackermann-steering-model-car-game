@@ -32,7 +32,6 @@ class Car:
         self.reset_motion()
         self.reset_positions()
 
-
     def reset_dimensions(self):
         self.length = 3.3 * self.scale
         self.width = 2. * self.scale
