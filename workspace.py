@@ -62,7 +62,8 @@ class Workspace:
         map3d = warped.copy()
         map3d[black_pixels] = [255, 255, 255]
 
-        self.map3d = pygame.surfarray.make_surface(map3d)
+        self.map3d = map3d
+        self.map3d_surf = pygame.surfarray.make_surface(map3d)
 
     def _pad_2D_map(self):
         """
@@ -190,5 +191,5 @@ class Workspace:
         self._get_axes()
 
     def draw(self):
-        self.screen.blit(self.map3d, self.map_settings['topleft'])
+        self.screen.blit(self.map3d_surf, self.map_settings['topleft'])
         self.screen.blit(self.axes, self.map_settings['topleft'])

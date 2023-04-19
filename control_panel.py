@@ -91,7 +91,9 @@ class ControlPanel:
         if self.zoom_settings['3d']:
             zoom_radius = r / zoom_factor / zoom_factor
             img = self.workspace.map3d.astype(np.uint8)
-            car_center = self.car.car_origin2d
+            # car center relative to map screen
+            car_center = (self.car.car_origin2d[0] - self.settings.map_screen['topleft'][0],
+                          self.car.car_origin2d[1] - self.settings.map_screen['topleft'][1])
             calibration_angle = 90
         else:
             zoom_radius = r / zoom_factor / 0.15
@@ -113,6 +115,11 @@ class ControlPanel:
             end_row = np.round(car_center[0] + zoom_radius).astype(np.int32)
             end_col = np.round(car_center[1] + zoom_radius).astype(np.int32)
             pre_cropped = img[start_row:end_row, start_col:end_col]
+            # print(start_row, end_row, start_col, end_col)
+            # points3d = [[start_col, start_row, 0],
+            #             [end_col, start_row, 0],
+            #             [start_col, end_row, 0],
+            #             [end_col, end_row, 0]]
 
             # Resize
             scaled = cv2.resize(pre_cropped, (w, h),

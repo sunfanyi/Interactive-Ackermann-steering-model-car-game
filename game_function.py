@@ -19,13 +19,19 @@ scale_factor = my_settings.map_screen['scale_factor']
 
 def check_event(settings, game_stats, workspace, car, large_car,
                 zoom_buttons, restart_button, trimetric_button,
-                axes_buttons, switch_buttons):
+                axes_buttons, switch_buttons, manipulator):
     for event in pygame.event.get():
+        if game_stats.manipulator:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    game_stats.manipulator = False
+            return
+
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            check_keydown_event(event, game_stats, workspace, car, large_car)
+            check_keydown_event(event, game_stats, workspace, car, large_car, manipulator)
         elif event.type == pygame.KEYUP:
             check_keyup_event(event, car, large_car)
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -79,8 +85,11 @@ def check_mouse_click_event(settings, game_stats, workspace, car, large_car,
         restart_event(car, large_car, game_stats)
 
 
-def check_keydown_event(event, game_stats, workspace, car, large_car):
+def check_keydown_event(event, game_stats, workspace, car, large_car, manipulator):
     check_car_moving(event, game_stats, car, large_car)
+    if event.key == pygame.K_p:
+        game_stats.manipulator = True
+        manipulator.current_frame = 0
 
 
 def restart_event(car, large_car, game_stats):
@@ -232,7 +241,7 @@ def draw_switch(screen, switch_buttons, game_stats):
 def update_screen(settings, game_stats, screen1, screen2,
                   workspace, car, large_car, zoom_buttons, restart_button,
                   trimetric_button, axes_buttons, switch_buttons,
-                  latex_window, control_panel, msg_box):
+                  latex_window, control_panel, msg_box, manipulator):
     screen1.fill(settings.screen1['bg_color'])
     screen2.fill(settings.screen2['bg_color'])
 
@@ -245,6 +254,9 @@ def update_screen(settings, game_stats, screen1, screen2,
     large_car.draw()
     latex_window.draw()
     msg_box.show_msg()
+
+    if game_stats.manipulator:
+        manipulator.draw()
 
     # buttons
     for button in zoom_buttons:
