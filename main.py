@@ -82,20 +82,20 @@ def run_game():
             my_car.update()
             my_large_car.update_zoomed_map(my_car.car_orientation,
                                            my_car.wheels_orientation)
-
-            control_panel.update()
-            latex_window.update()
-            msg_box.update()
         else:
             manipulator.update()
+
+        control_panel.update()
+        latex_window.update()
+        msg_box.update()
 
         gf.update_screen(settings, game_stats, screen1, screen2,
                          workspace, my_car, my_large_car, zoom_buttons, restart_button,
                          trimetric_button, axes_buttons, switch_buttons,
                          latex_window, control_panel, msg_box, manipulator)
 
-        pygame.display.update()
 
+        pygame.display.update()
         # frame_count += 1
         # # Calculate the elapsed time and frame rate
         # elapsed_time = pygame.time.get_ticks() - start_time

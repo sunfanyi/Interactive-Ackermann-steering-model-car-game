@@ -1,61 +1,64 @@
 import pygame
 import sys
+import numpy as np
+
+import game_function as gf
+from trajectory_planning import get_path, do_trajectory_planning
 
 # Initialize pygame
 pygame.init()
 
 # Create a display surface
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption('Zoom In Animation')
+pygame.display.set_caption('Manipulator')
 
-# Create a subwindow (surface) with some content
-subwindow = pygame.Surface((400, 300))
-subwindow.fill((255, 0, 0))
-pygame.draw.circle(subwindow, (0, 255, 0), (200, 150), 100)
-
-# Animation parameters
-zoom_duration = 3  # seconds
 frame_rate = 60
-frames = int(zoom_duration * frame_rate)
-current_frame = 0
 
 clock = pygame.time.Clock()
 
-# Main loop
-running = True
-while running:
+pointer = 0
+end_memory = []
+
+res = 20  # resolution of trajectory points
+paths = do_trajectory_planning(res)
+P_coordinates = paths[4]
+num_points = len(paths[0])
+
+while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
-            break
+            pygame.quit()
+            sys.exit()
 
-    # Clear the screen
-    screen.fill((0, 0, 0))
+    screen.fill((255, 255, 255))
+    joints = get_path(paths, pointer, end_memory)
 
-    # Calculate the current scale factor
-    scale_factor = current_frame / frames
+    for end_pos in end_memory:
+        pos2d = gf.point_3d_to_2d(*end_pos, offset=(400, 300))
+        pygame.draw.circle(screen, (255, 0, 0), pos2d, 3)
 
-    # Scale the subwindow
-    scaled_width = int(400 * scale_factor)
-    scaled_height = int(300 * scale_factor)
-    scaled_subwindow = pygame.transform.scale(subwindow, (scaled_width, scaled_height))
+    # plot via points
+    last_via_points = P_coordinates[pointer//res:pointer//res+2, :]
+    for point in last_via_points:
+        pos2d = gf.point_3d_to_2d(*point, offset=(400, 300))
+        pygame.draw.circle(screen, (0, 255, 0), pos2d, 3)
 
-    # Calculate the position to center the scaled subwindow
-    x = (800 - scaled_width) // 2
-    y = (600 - scaled_height) // 2
+    joints = [gf.point_3d_to_2d(*joint, offset=(400, 300))
+              for joint in joints]
 
-    # Draw the scaled subwindow on the screen
-    screen.blit(scaled_subwindow, (x, y))
+    for i in range(len(joints) - 1):
+        P1 = joints[i]
+        P2 = joints[i + 1]
+        # plot links
+        pygame.draw.line(screen, (0, 0, 255), P1, P2, 2)
+        # plot joints
+        pygame.draw.circle(screen, (0, 0, 0), P1, 3)
 
-    # Update the display
+    pointer += 1
+    if pointer >= num_points:
+        pointer = 0
+
     pygame.display.flip()
-
-    # Increment the current frame
-    current_frame += 1
-    if current_frame > frames:
-        current_frame = 0
-
     clock.tick(frame_rate)
 
-pygame.quit()
-sys.exit()
+

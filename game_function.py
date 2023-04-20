@@ -154,7 +154,7 @@ def check_keyup_event(event, car, large_car):
         large_car.brake = False
 
 
-def detect_collision(game_stats, screen, car, large_car, workspace):
+def detect_collision(game_stats, screen, car, large_car, workspace, manipulator):
     if car.car_origin3d[0] < 1000 or car.car_origin3d[0] > 4000 or \
             car.car_origin3d[1] < 500 or car.car_origin3d[1] > 2500:
         return
@@ -220,7 +220,12 @@ def detect_collision(game_stats, screen, car, large_car, workspace):
         # ============================= check collision with blue end mask =============================
         if end_mask[int(car.car_origin3d[1]),
                     int(car.car_origin3d[0])]:
+            car.reset_positions('end')
+            car.reset_motion()
             game_stats.started = False
+            game_stats.manipulator = True
+            manipulator.current_frame = 0
+            large_car.moving_fwd = False  # suppress wheel spinning
             time.sleep(0.3)
 
 
@@ -268,7 +273,7 @@ def update_screen(settings, game_stats, screen1, screen2,
     trimetric_button.draw_button()
 
     detect_collision(game_stats, screen1, car, large_car,
-                     workspace)
+                     workspace, manipulator)
 
 
 def rotation(theta, direction):

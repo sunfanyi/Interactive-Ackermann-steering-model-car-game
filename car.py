@@ -78,6 +78,11 @@ class Car:
                                             self.workspace.blue_start[1],
                                             self.wheel_radius])
             self.car_orientation = -1.7  # theta, in radians
+        elif location == 'end':
+            self.car_origin3d = np.float32([self.workspace.blue_end[0],
+                                            self.workspace.blue_end[1],
+                                            self.wheel_radius])
+            self.car_orientation = -3.264  # theta, in radians
         elif location == 'origin':
             self.car_origin3d = np.float32([0, 0, self.wheel_radius])
             self.car_orientation = 0  # theta, in radians

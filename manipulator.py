@@ -12,12 +12,15 @@ import game_function as gf
 import cv2
 
 from car import Car
+from trajectory_planning import get_path, do_trajectory_planning
 
 
 class Manipulator:
     zoom_duration = 2
     frame_rate = 60
     final_frames = int(zoom_duration * frame_rate)
+
+    res = 20  # resolution of trajectory points
 
     def __init__(self, settings, screen, game_stats, workspace, car):
         self.settings = settings
@@ -30,10 +33,18 @@ class Manipulator:
 
         self.w = 850
         self.h = 400
-        self.surface = pygame.Surface((self.w, self.h))
-        self._get_3D_map()
+        self.sur_map = pygame.Surface((self.w, self.h))
+        self.sur_robot = pygame.Surface((self.w, self.h),
+                                        pygame.SRCALPHA)
 
+        self._get_3D_map()
         self._get_zoomed_car()
+
+        self.pointer = 0
+        self.end_memory = []
+        self.paths = do_trajectory_planning(self.res)
+        self.P_coordinates = self.paths[4]
+        self.num_points = len(self.paths[0])
 
     def _get_3D_map(self):
         img = self.workspace.img
@@ -61,7 +72,7 @@ class Manipulator:
                     self.settings.map_screen['xend'],
                     self.settings.map_screen['yend'],
                     [self.settings.map_screen['xlim'], self.settings.map_screen['ylim'], 0]]
-        cornersB = np.float32([gf.point_3d_to_2d(*point, self.workspace.R_view) for point in points3d])
+        cornersB = np.float32([gf.point_3d_to_2d(*point) for point in points3d])
         # shift negative points:
         cornersB[:, 0] += abs(min(cornersB[:, 0])) + 10
         cornersB[:, 1] += abs(min(cornersB[:, 1])) + 80
@@ -78,11 +89,13 @@ class Manipulator:
         map3d = warped.copy()
         map3d[black_pixels] = [255, 255, 255]
 
-        self.surface = pygame.surfarray.make_surface(map3d)
-        self.surface = pygame.transform.scale(self.surface,
+        self.sur_map = pygame.surfarray.make_surface(map3d)
+        self.sur_map = pygame.transform.scale(self.sur_map,
                                               (self.w, self.h))
 
+        # find blue end position after warp perspective transformation
         point = self.workspace.blue_end
+        # blue end poisition relative to the cropped image
         homo = np.array([point[0] - x0, point[1] - y0, 1])
 
         # Multiply the homography matrix
@@ -90,12 +103,10 @@ class Manipulator:
 
         # Convert homogeneous to cartesian coordinates
         transformed_point = transformed_point[:2] / transformed_point[2]
-        print(transformed_point)
-        # pygame.draw.circle(self.surface, (255, 0, 0), (transformed_point[0], transformed_point[1]), 10)
         self.car_origin2d = transformed_point
 
     def _get_zoomed_car(self):
-        zoomed_car = Car(self.settings, self.surface, self.game_stats, self.workspace)
+        zoomed_car = Car(self.settings, self.sur_map, self.game_stats, self.workspace)
         zoomed_car.scale *= self.zoom_factor
         zoomed_car.reset_dimensions()
         zoomed_car.car_origin3d = np.float32([0, 0, zoomed_car.wheel_radius])
@@ -105,28 +116,66 @@ class Manipulator:
         zoomed_car.apply_transformations()
         zoomed_car.draw()
 
+        # get manipulator origin
+        a = [0.5 * zoomed_car.wheel_base * np.cos(-3.264),
+             0.5 * zoomed_car.wheel_base * np.sin(-3.264),
+             zoomed_car.height + zoomed_car.wheel_radius]
+        self.manipulator_origin2d = gf.point_3d_to_2d(*a, offset=self.car_origin2d)
+
     def update(self):
         if self.current_frame >= self.final_frames:
-            return
-        offset = (self.workspace.map_pos[0] + self.settings.map_screen['topleft'][0],
-                  self.workspace.map_pos[1] + self.settings.map_screen['topleft'][1])
-        center = self.workspace.blue_end
-        (x0, y0) = gf.point_3d_to_2d(center[0], center[1], self.car.wheel_radius,
-                                     self.workspace.R_view, offset)
-        (xf, yf) = (0, 0)
+            # zooming-in finish, manipulator moving
+            self.sur_robot.fill((0, 0, 0, 0))
 
-        scale_factor = self.current_frame / self.final_frames
+            joints = get_path(self.paths, self.pointer, self.end_memory)
 
-        # Scale the subwindow
-        scaled_width = int(self.w * scale_factor)
-        scaled_height = int(self.h * scale_factor)
-        self.surface_scaled = pygame.transform.scale(self.surface, (scaled_width, scaled_height))
+            for end_pos in self.end_memory:
+                pos2d = gf.point_3d_to_2d(*end_pos, offset=self.manipulator_origin2d)
+                pygame.draw.circle(self.sur_robot, (255, 0, 0), pos2d, 3)
 
-        self.topleft = (int(x0 + scale_factor * (xf - x0)) + 0,
-                        int(y0 + scale_factor * (yf - y0)) + 170)
+            # plot via points
+            last_via_points = self.P_coordinates[self.pointer // self.res:
+                                                 self.pointer // self.res + 2, :]
+            for point in last_via_points:
+                pos2d = gf.point_3d_to_2d(*point, offset=self.manipulator_origin2d)
+                pygame.draw.circle(self.sur_robot, (0, 255, 0), pos2d, 3)
 
-        self.current_frame += 1
+            joints = [gf.point_3d_to_2d(*joint, offset=self.manipulator_origin2d)
+                      for joint in joints]
+
+            for i in range(len(joints) - 1):
+                P1 = joints[i]
+                P2 = joints[i + 1]
+                # plot links
+                pygame.draw.line(self.sur_robot, (0, 0, 255), P1, P2, 2)
+                # plot joints
+                pygame.draw.circle(self.sur_robot, (0, 0, 0), P1, 3)
+
+            self.pointer += 1
+            if self.pointer >= self.num_points:
+                self.pointer = 0
+        else:  # zooming
+            offset = (self.workspace.map_pos[0] + self.settings.map_screen['topleft'][0],
+                      self.workspace.map_pos[1] + self.settings.map_screen['topleft'][1])
+            center = self.workspace.blue_end
+            (x0, y0) = gf.point_3d_to_2d(center[0], center[1], self.car.wheel_radius,
+                                         self.workspace.R_view, offset)
+            (xf, yf) = (0, 0)
+
+            scale_factor = self.current_frame / self.final_frames
+
+            # Scale the subwindow
+            scaled_width = int(self.w * scale_factor)
+            scaled_height = int(self.h * scale_factor)
+            self.sur_map_scaled = pygame.transform.scale(
+                self.sur_map, (scaled_width, scaled_height))
+
+            self.topleft = (int(x0 + scale_factor * (xf - x0)) + 0,
+                            int(y0 + scale_factor * (yf - y0)) + 170)
+
+            self.current_frame += 1
 
     def draw(self):
-        self.screen.blit(self.surface_scaled, self.topleft)
+        self.screen.blit(self.sur_map_scaled, self.topleft)
+        self.screen.blit(self.sur_robot, self.topleft)
 

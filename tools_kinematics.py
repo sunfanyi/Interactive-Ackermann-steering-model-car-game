@@ -11,6 +11,7 @@ import sympy as sp
 from IPython.display import display, Math
 
 
+# =============================== For visualisation in jupyter notebook ===============================
 def get_mat_rolling(alpha, beta, L):
     res = sp.Matrix([sp.sin(alpha+beta), -sp.cos(alpha+beta), -L*sp.cos(beta)]).T
     res.simplify()
@@ -84,3 +85,88 @@ def matprint(matrix, alias=None):
         display(matrix)
 
 
+# =============================== For trajectory planning ===============================
+def get_trans_mat(a, alpha, d, theta, return_P=False):
+    """
+    Obtain the transformation matrix from DH Parameters
+    :param a: Link angle (in deg)
+    :param alpha: Link twist
+    :param d: Link offset (in deg)
+    :param theta: Joint angle
+    :param return_P: return the 3x1 translation matrix
+    :return: transformation matrix and rotation matrix
+    """
+    if type(alpha) == int or type(alpha) == float:
+        alpha = alpha*np.pi/180
+    if type(theta) == int or type(theta) == float:
+        theta = theta*np.pi/180
+
+    R = rotation(alpha, 'x') * rotation(theta, 'z')
+    R.simplify()
+    T = add_translation(R, sp.Matrix([a, -sp.sin(alpha) * d, sp.cos(alpha) * d, 1]))
+    if return_P:
+        return R, T, sp.Matrix([a, -sp.sin(alpha) * d, sp.cos(alpha) * d])
+    else:
+        return R, T
+
+
+def update_target_vals(T0e_target, initial_vals):
+    """
+    get the target values from the position of end effector which can be used
+    for inverse kinematics
+    :param T0e_target: matrix of the position of end effector
+    :param initial_vals: a dict containing all the keys, eg.
+        initial_vals = {r11: None, r12: None, r13: None,
+                        r21: None, r22: None, r23: None,
+                        r31: None, r32: None, r33: None,
+                        X: None, Y: None, Z: None}
+        where the rii, X, Y, Z are sympy symbols
+    :return: a dict containing target rii, X, Y, Z values, which can be
+        substituted easily to equation by .subs(vals), eg.
+    """
+    keys = list(initial_vals.keys())  # take the keys
+    # update the values
+    vals = {keys[0]: T0e_target[0, 0], keys[1]: T0e_target[0, 1], keys[2]: T0e_target[0, 2],
+            keys[3]: T0e_target[1, 0], keys[4]: T0e_target[1, 1], keys[5]: T0e_target[1, 2],
+            keys[6]: T0e_target[2, 0], keys[7]: T0e_target[2, 1], keys[8]: T0e_target[2, 2],
+            keys[9]: T0e_target[0, 3], keys[10]: T0e_target[1, 3], keys[11]: T0e_target[2, 3]}
+    return vals
+
+
+def calc_parabolic_traj_via_points(t, theta_pre, theta_dot_pre, V, a_left,
+                                   a_right, tb_left, tb_right):
+    """
+    Linear and Parabolic Blended Trajectories with via points
+    """
+    tf = t[-1]
+    theta_vals = np.ndarray(np.shape(t))  # position
+    theta_velo = np.ndarray(np.shape(t))  # velocity
+    theta_acc = np.ndarray(np.shape(t))  # acceleration
+
+    range1 = (t >= 0) & (t <= tb_left)
+    a0 = theta_pre
+    a1 = theta_dot_pre
+    a2 = a_left/2
+    theta_vals[range1] = a0 + a1*t[range1] + a2*t[range1]**2
+    theta_velo[range1] = a1 + 2*a2*t[range1]
+    theta_acc[range1] = 2*a2
+
+    range2 = (t > tb_left) & (t <= tf-tb_right)
+    a0 = theta_pre + tb_left*(theta_dot_pre-V) + a_left/2*tb_left**2
+    a1 = V
+    a2 = 0
+    theta_vals[range2] = a0 + a1*t[range2] + a2*t[range2]**2
+    theta_velo[range2] = a1 + 2*a2*t[range2]
+    theta_acc[range2] = 2*a2
+    theta_ideal = a0 + a1*t + a2*t**2
+
+    range3 = (t > tf-tb_right) & (t <= tf)
+    a1 = V - a_right * (tf - tb_right)
+    a2 = a_right/2
+    a0 = theta_pre + tb_left*(theta_dot_pre-V) + a_left/2*tb_left**2 + \
+                        (tf - tb_right) * (V - a1) - (tf - tb_right)**2 * a2
+    theta_vals[range3] = a0 + a1*t[range3] + a2*t[range3]**2
+    theta_velo[range3] = a1 + 2*a2*t[range3]
+    theta_acc[range3] = 2*a2
+
+    return theta_vals, theta_velo, theta_acc, theta_ideal
