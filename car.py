@@ -352,18 +352,18 @@ class LargeCar(Car):
         self.reset_zoomed_map()
 
     def reset_zoomed_map(self):
-        self.car_origin3d = np.float32([0, 0, 0])
-
-        if self.settings.zoom_region['3d']:  # trimetric view
-            self.R_view = self.workspace.R_view
-        else:  # top view
-            self.R_view = np.eye(3)
+        self.car_origin3d = np.float32([0, 0, self.wheel_radius])
 
         topleft = self.settings.zoom_region['topleft']
         self.offset = (topleft[0] + self.settings.zoom_region['window_radius'],
                        topleft[1] + self.settings.zoom_region['window_radius'])
 
     def update_zoomed_map(self, car_orientation, wheels_orientation):
+        if self.settings.zoom_region['3d']:  # trimetric view
+            self.R_view = self.workspace.R_view
+        else:  # top view
+            self.R_view = np.eye(3)
+
         if not self.game_stats.car_freeze:
             # keep it frozen otherwise
             if self.settings.zoom_region['car_fixed']:

@@ -11,17 +11,20 @@ import numpy as np
 import game_function as gf
 import cv2
 
+from car import Car
+
+
 class Manipulator:
     zoom_duration = 2
     frame_rate = 60
     final_frames = int(zoom_duration * frame_rate)
 
-    def __init__(self, settings, screen, game_stats, workspace, my_car):
+    def __init__(self, settings, screen, game_stats, workspace, car):
         self.settings = settings
         self.screen = screen
         self.game_stats = game_stats
         self.workspace = workspace
-        self.my_car = my_car
+        self.car = car
 
         self.current_frame = 0
 
@@ -29,44 +32,30 @@ class Manipulator:
         self.h = 400
         self.surface = pygame.Surface((self.w, self.h))
         self._get_3D_map()
-        # self.surface.fill((255, 0, 0))
-        # pygame.draw.circle(self.surface, (0, 255, 0), (200, 150), 100)
 
-        # r = self.settings.zoom_region['window_radius']
-        # zoom_factor = self.settings.zoom_region['factor']
-        # zoom_radius = r / zoom_factor / zoom_factor
-        # img = self.workspace.map3d.astype(np.uint8)
-        # car_center = self.workspace.blue_end
-        # calibration_angle = 90
-        #
-        # start_row = np.round(car_center[0] - zoom_radius).astype(np.int32)
-        # start_col = np.round(car_center[1] - zoom_radius).astype(np.int32)
-        # end_row = np.round(car_center[0] + zoom_radius).astype(np.int32)
-        # end_col = np.round(car_center[1] + zoom_radius).astype(np.int32)
-        # pre_cropped = img[start_row:end_row, start_col:end_col]
-        #
-        # # Resize
-        # scaled = cv2.resize(pre_cropped, (w, h),
-        #                     interpolation=cv2.INTER_LINEAR)
-        #
-        # # Fill image to surface
-        # pygame.surfarray.blit_array(self.surface, scaled)
-        
+        self._get_zoomed_car()
+
     def _get_3D_map(self):
         img = self.workspace.img
+
+        # pre-cropped:
+        dx = 700
+        dy = int(dx / 1.42)
+        x0 = 800
+        y0 = 600
+        self.zoom_factor = img.shape[0] / dy
+
+        img = img[y0:y0 + dy, x0:x0 + dx]
+
         img_w = img.shape[1]
         img_h = img.shape[0]
 
         # Apply non-affine transformation
         # corner points from:
-        dx = 700
-        dy = dx / 1.42
-        x0 = 800
-        y0 = 600
-        cornersA = np.float32([[x0, y0],
-                               [x0 + dx, y0],
-                               [x0, y0 + dy],
-                               [x0 + dx, y0 + dy]])
+        cornersA = np.float32([[0, 0],
+                               [img_w, 0],
+                               [0, img_h],
+                               [img_w, img_h]])
         # corner points to:
         points3d = [self.settings.map_screen['origin3d'],
                     self.settings.map_screen['xend'],
@@ -89,11 +78,32 @@ class Manipulator:
         map3d = warped.copy()
         map3d[black_pixels] = [255, 255, 255]
 
-        self.map3d = map3d
         self.surface = pygame.surfarray.make_surface(map3d)
         self.surface = pygame.transform.scale(self.surface,
                                               (self.w, self.h))
-        # self.surface = pygame.Surface((w, h))
+
+        point = self.workspace.blue_end
+        homo = np.array([point[0] - x0, point[1] - y0, 1])
+
+        # Multiply the homography matrix
+        transformed_point = np.matmul(M, homo)
+
+        # Convert homogeneous to cartesian coordinates
+        transformed_point = transformed_point[:2] / transformed_point[2]
+        print(transformed_point)
+        # pygame.draw.circle(self.surface, (255, 0, 0), (transformed_point[0], transformed_point[1]), 10)
+        self.car_origin2d = transformed_point
+
+    def _get_zoomed_car(self):
+        zoomed_car = Car(self.settings, self.surface, self.game_stats, self.workspace)
+        zoomed_car.scale *= self.zoom_factor
+        zoomed_car.reset_dimensions()
+        zoomed_car.car_origin3d = np.float32([0, 0, zoomed_car.wheel_radius])
+        zoomed_car.R_view = self.workspace.R_view
+        zoomed_car.offset = self.car_origin2d
+        zoomed_car.car_orientation = -3.264
+        zoomed_car.apply_transformations()
+        zoomed_car.draw()
 
     def update(self):
         if self.current_frame >= self.final_frames:
@@ -101,7 +111,7 @@ class Manipulator:
         offset = (self.workspace.map_pos[0] + self.settings.map_screen['topleft'][0],
                   self.workspace.map_pos[1] + self.settings.map_screen['topleft'][1])
         center = self.workspace.blue_end
-        (x0, y0) = gf.point_3d_to_2d(center[0], center[1], self.my_car.wheel_radius,
+        (x0, y0) = gf.point_3d_to_2d(center[0], center[1], self.car.wheel_radius,
                                      self.workspace.R_view, offset)
         (xf, yf) = (0, 0)
 
@@ -119,3 +129,4 @@ class Manipulator:
 
     def draw(self):
         self.screen.blit(self.surface_scaled, self.topleft)
+
