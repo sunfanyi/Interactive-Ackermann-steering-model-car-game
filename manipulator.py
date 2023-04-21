@@ -5,7 +5,7 @@
 # @Github  : https://github.com/sunfanyi
 # @Software: PyCharm
 
-
+import time
 import pygame
 import numpy as np
 import game_function as gf
@@ -16,7 +16,7 @@ from trajectory_planning import get_path, do_trajectory_planning
 
 
 class Manipulator:
-    zoom_duration = 2
+    zoom_duration = 1
     frame_rate = 60
     final_frames = int(zoom_duration * frame_rate)
 
@@ -30,6 +30,7 @@ class Manipulator:
         self.car = car
 
         self.current_frame = 0
+        self.pause = False
 
         self.w = 850
         self.h = 400
@@ -40,10 +41,20 @@ class Manipulator:
         self._get_3D_map()
         self._get_zoomed_car()
 
+        # a = [0.5 * zoomed_car.wheel_base * np.cos(-3.264),
+        #      0.5 * zoomed_car.wheel_base * np.sin(-3.264),]
         self.pointer = 0
         self.end_memory = []
-        self.paths = do_trajectory_planning(self.res)
+        end_point = self.workspace.green_end - self.workspace.blue_end
+        end_point = np.array([end_point[0] - 0.5 * car.wheel_base * np.cos(-3.264),
+                              end_point[1] - 0.5 * car.wheel_base * np.sin(-3.264),
+                              -(self.car.height+self.car.wheel_radius)], dtype=np.float32)
+        # print(np.sqrt(end_point[0] ** 2 + end_point[1] ** 2))
+        # print(self.car.height+self.car.wheel_radius)
+        self.paths = do_trajectory_planning(end_point, self.res)
         self.P_coordinates = self.paths[4]
+        # print(self.paths[0])
+        # print(self.P_coordinates)
         self.num_points = len(self.paths[0])
 
     def _get_3D_map(self):
@@ -117,19 +128,23 @@ class Manipulator:
         zoomed_car.draw()
 
         # get manipulator origin
-        a = [0.5 * zoomed_car.wheel_base * np.cos(-3.264),
-             0.5 * zoomed_car.wheel_base * np.sin(-3.264),
-             zoomed_car.height + zoomed_car.wheel_radius]
-        self.manipulator_origin2d = gf.point_3d_to_2d(*a, offset=self.car_origin2d)
+        origin = [0.5 * zoomed_car.wheel_base * np.cos(-3.264),
+                  0.5 * zoomed_car.wheel_base * np.sin(-3.264),
+                  zoomed_car.height + zoomed_car.wheel_radius]
+        self.manipulator_origin2d = gf.point_3d_to_2d(*origin, offset=self.car_origin2d)
 
     def update(self):
+        self.sur_robot.fill((0, 0, 0, 0))
         if self.current_frame >= self.final_frames:
+            self.pause = False
             # zooming-in finish, manipulator moving
-            self.sur_robot.fill((0, 0, 0, 0))
 
             joints = get_path(self.paths, self.pointer, self.end_memory)
+            if self.pointer == self.num_points - 1:
+                self.P_coordinates[-1] = self.end_memory[0]
 
             for end_pos in self.end_memory:
+                end_pos = end_pos * self.zoom_factor
                 pos2d = gf.point_3d_to_2d(*end_pos, offset=self.manipulator_origin2d)
                 pygame.draw.circle(self.sur_robot, (255, 0, 0), pos2d, 3)
 
@@ -137,9 +152,11 @@ class Manipulator:
             last_via_points = self.P_coordinates[self.pointer // self.res:
                                                  self.pointer // self.res + 2, :]
             for point in last_via_points:
+                point = point * self.zoom_factor
                 pos2d = gf.point_3d_to_2d(*point, offset=self.manipulator_origin2d)
-                pygame.draw.circle(self.sur_robot, (0, 255, 0), pos2d, 3)
+                pygame.draw.circle(self.sur_robot, (0, 0, 0), pos2d, 5)
 
+            joints = [joint * self.zoom_factor for joint in joints]
             joints = [gf.point_3d_to_2d(*joint, offset=self.manipulator_origin2d)
                       for joint in joints]
 
@@ -153,7 +170,9 @@ class Manipulator:
 
             self.pointer += 1
             if self.pointer >= self.num_points:
+                self.pause = True
                 self.pointer = 0
+
         else:  # zooming
             offset = (self.workspace.map_pos[0] + self.settings.map_screen['topleft'][0],
                       self.workspace.map_pos[1] + self.settings.map_screen['topleft'][1])

@@ -94,8 +94,13 @@ def run_game():
                          trimetric_button, axes_buttons, switch_buttons,
                          latex_window, control_panel, msg_box, manipulator)
 
-
         pygame.display.update()
+
+        if manipulator.pause:
+            time.sleep(2)
+        clock.tick(frame_rate)
+
+
         # frame_count += 1
         # # Calculate the elapsed time and frame rate
         # elapsed_time = pygame.time.get_ticks() - start_time
@@ -103,7 +108,6 @@ def run_game():
         #     frame_rate = frame_count / (elapsed_time / 1000)
 
         # print("Frame rate:", frame_rate)
-        clock.tick(frame_rate)
         # print(my_car.car_origin3d)
         # print(my_car.car_origin2d)
         # print(my_car.car_orientation)
