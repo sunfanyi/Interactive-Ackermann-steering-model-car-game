@@ -25,12 +25,18 @@ class MessageBox:
         else:
             if self.game_stats.started:
                 msg = 'Driving to the end point...'
+
+                end_time = pygame.time.get_ticks()
+                timer_msg = (end_time - self.game_stats.start_time) / 1000
+                msg = msg + '\nTime: {:.2f} s'.format(timer_msg)
             else:
                 msg = 'Driving to the start point...'
         if self.game_stats.manipulator:
             msg = 'Watching manipulator moving...\n' \
                     '(Press Esc to stop)'
 
+        if self.game_stats.best_time_score is not None:
+            msg = msg + '\nBest time: {:.2f} s'.format(self.game_stats.best_time_score/1000)
         self.surface.fill(self.settings['bg_color'])
 
         # Split the text into separate lines

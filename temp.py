@@ -1,64 +1,41 @@
 import pygame
 import sys
-import numpy as np
 
-import game_function as gf
-from trajectory_planning import get_path, do_trajectory_planning
-
-# Initialize pygame
 pygame.init()
 
-# Create a display surface
+# Set up the display
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption('Manipulator')
 
-frame_rate = 60
+# Create a font object
+font = pygame.font.Font(None, 36)
 
-clock = pygame.time.Clock()
+# Start the timer
+start_time = pygame.time.get_ticks()
 
-pointer = 0
-end_memory = []
-
-res = 20  # resolution of trajectory points
-paths = do_trajectory_planning(res)
-P_coordinates = paths[4]
-num_points = len(paths[0])
-
-while True:
+# Main game loop
+running = True
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            running = False
+            break
 
+    # Update game state and draw here
+
+    # Clear the screen
     screen.fill((255, 255, 255))
-    joints = get_path(paths, pointer, end_memory)
 
-    for end_pos in end_memory:
-        pos2d = gf.point_3d_to_2d(*end_pos, offset=(400, 300))
-        pygame.draw.circle(screen, (255, 0, 0), pos2d, 3)
+    # Calculate the elapsed time
+    elapsed_time = (pygame.time.get_ticks() - start_time) / 1000
 
-    # plot via points
-    last_via_points = P_coordinates[pointer//res:pointer//res+2, :]
-    for point in last_via_points:
-        pos2d = gf.point_3d_to_2d(*point, offset=(400, 300))
-        pygame.draw.circle(screen, (0, 255, 0), pos2d, 3)
+    # Render the elapsed time as text with two decimal places
+    timer_text = font.render(f"Elapsed time: {elapsed_time:.2f} seconds", True, (0, 0, 0))
 
-    joints = [gf.point_3d_to_2d(*joint, offset=(400, 300))
-              for joint in joints]
+    # Display the timer text on the screen
+    screen.blit(timer_text, (10, 10))
 
-    for i in range(len(joints) - 1):
-        P1 = joints[i]
-        P2 = joints[i + 1]
-        # plot links
-        pygame.draw.line(screen, (0, 0, 255), P1, P2, 2)
-        # plot joints
-        pygame.draw.circle(screen, (0, 0, 0), P1, 3)
-
-    pointer += 1
-    if pointer >= num_points:
-        pointer = 0
-
+    # Update the display
     pygame.display.flip()
-    clock.tick(frame_rate)
 
-
+pygame.quit()
+sys.exit()

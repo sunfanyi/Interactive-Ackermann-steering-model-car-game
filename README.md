@@ -1,3 +1,13 @@
+2023.04.23
+
+Main screen
+
+![](Figures/logs/2023_04_23_main_1.png)
+
+Manipulator screen
+
+![](Figures/logs/2023_04_23_robot_1.png)
+
 2023.04.06
 
 ![](Figures/logs/2023_04_06_2.png)

@@ -157,6 +157,9 @@ def check_keyup_event(event, car, large_car):
 def wait_key_press(key):
     while True:  # wait for key press
         for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == key:
                     return
@@ -224,6 +227,7 @@ def detect_collision(game_stats, screen, car, large_car, workspace, manipulator)
             game_stats.started = True
             large_car.moving_fwd = False  # suppress wheel spinning
             time.sleep(0.3)
+            game_stats.start_time = pygame.time.get_ticks()
     else:
         # ============================= check collision with blue end mask =============================
         if end_mask[int(car.car_origin3d[1]),
@@ -234,6 +238,12 @@ def detect_collision(game_stats, screen, car, large_car, workspace, manipulator)
             game_stats.manipulator = True
             manipulator.init_trajectory()
             large_car.moving_fwd = False  # suppress wheel spinning
+
+            game_stats.current_time_score = (pygame.time.get_ticks() - game_stats.start_time)
+            if game_stats.best_time_score is None:
+                game_stats.best_time_score = game_stats.current_time_score
+            elif game_stats.current_time_score < game_stats.best_time_score:
+                game_stats.best_time_score = game_stats.current_time_score
             time.sleep(0.3)
 
 
