@@ -283,7 +283,7 @@ class Car:
         else:
             self.steering_rate = 0
             # steering wheel returns to initial position
-            self.steering_angle *= 0.94 if moving else 0.99
+            self.steering_angle *= 0.94 if moving else 0.98
 
         if self.brake:
             self.car_speed *= 0.9

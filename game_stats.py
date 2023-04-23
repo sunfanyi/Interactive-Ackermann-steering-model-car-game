@@ -5,6 +5,8 @@
 # @Github  : https://github.com/sunfanyi
 # @Software: PyCharm
 
+import numpy as np
+
 
 class GameStats:
     def __init__(self):
@@ -15,3 +17,9 @@ class GameStats:
         # for collision detection
         self.car_freeze = False
         self.collision_point = [0, 0, 0]
+
+        # timer
+        self.start_time = 0
+        self.best_time_score = None
+        self.current_time_score = None
+

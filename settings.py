@@ -234,7 +234,7 @@ class Settings:
     acceleration = 0.2
     car = {
         'acc': acceleration,  # acceleration (m/s2)
-        'steering_speed': 0.4 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
+        'steering_speed': 0.6 / 180 * np.pi,  # phi (rad/s), for steering wheel, not theta
         'max_steer': 45 / 180 * np.pi,  # rad
         # 'max_speed': 20,  # m/s
         'max_speed': 50,  # m/s

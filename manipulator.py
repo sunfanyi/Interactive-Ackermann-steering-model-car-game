@@ -140,8 +140,6 @@ class Manipulator:
             # zooming-in finish, manipulator moving
             self.pause = False
             joints = get_path(self.paths, self.pointer, self.end_memory)
-            if self.pointer == self.num_points - 1:
-                self.P_coordinates[-1] = self.end_memory[0]
 
             for end_pos in self.end_memory:
                 end_pos = end_pos * self.zoom_factor
@@ -151,13 +149,13 @@ class Manipulator:
             # plot via points
             last_via_points = self.P_coordinates[self.pointer // self.res:
                                                  self.pointer // self.res + 2, :]
-            for point in last_via_points:
+
+            for i, point in enumerate(last_via_points):
                 point = point * self.zoom_factor
                 pos2d = gf.point_3d_to_2d(*point, offset=self.manipulator_origin2d)
-                if self.pointer == self.num_points - 1:
+                pygame.draw.circle(self.sur_robot, (100, 100, 100), pos2d, 5)
+                if (self.pointer == self.num_points - 1) and (i == 1):
                     pygame.draw.circle(self.sur_robot, (0, 0, 0), pos2d, 5)
-                else:
-                    pygame.draw.circle(self.sur_robot, (100, 100, 100), pos2d, 5)
 
             joints = [joint * self.zoom_factor for joint in joints]
             joints = [gf.point_3d_to_2d(*joint, offset=self.manipulator_origin2d)

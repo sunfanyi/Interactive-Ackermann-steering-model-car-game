@@ -66,7 +66,19 @@ T0e = T04 * T4e
 Pee = sp.Matrix([0, 0, 0, 1])
 P0e = T0e * Pee
 
-num_via_points = 5
+num_via_points = 3
+
+
+def fwd_kinematics(theta2_val, theta3_val, theta4_val, d1_val):
+    values = {l0: l0_val, l2: l2_val, l3: l3_val, l4: l4_val, le: le_val,
+              theta2: theta2_val, theta3: theta3_val, theta4: theta4_val,
+              d1: d1_val}
+    T0e_target = T0e.subs(values)
+    # convert infinitely small non-zero float to zero
+    T0e_target = np.array(T0e_target, dtype=np.float32)
+    T0e_target[np.abs(T0e_target) < 1e-7] = 0
+
+    return T0e_target
 
 
 def get_random_trans_mat():
@@ -80,15 +92,7 @@ def get_random_trans_mat():
     theta4_val = (np.random.rand() * 360 - 180) / 180 * np.pi
     d1_val = 5 + np.random.rand() * 35
 
-    values = {l0: l0_val, l2: l2_val, l3: l3_val, l4: l4_val, le: le_val,
-              theta2: theta2_val, theta3: theta3_val, theta4: theta4_val,
-              d1: d1_val}
-    T0e_target = T0e.subs(values)
-    # convert infinitely small non-zero float to zero
-    T0e_target = np.array(T0e_target, dtype=np.float32)
-    T0e_target[np.abs(T0e_target) < 1e-7] = 0
-
-    return T0e_target
+    return fwd_kinematics(theta2_val, theta3_val, theta4_val, d1_val)
 
 
 def solve_inverse_kinematics(vals_target):
@@ -150,29 +154,15 @@ def get_random_via_points(end_point):
         d1_points[i], theta2_points[i], theta3_points[i], theta4_points[i] = \
             solve_inverse_kinematics(vals_target)
 
-    # # end point
-    # # R = rotation(-np.pi, 'x') * rotation(-np.pi/4, 'y')
-    # # R = rotation(np.pi/4, 'y') * rotation(np.pi, 'x')
-    # P = add_translation(R, sp.Matrix(
-    #     [end_point[0], end_point[1], end_point[2], 1]))
-    # # _, P = (get_trans_mat(0, 180, 0, 0))
-    # # P = np.array(P, dtype=np.float32)
-    # # P[np.abs(P) < 1e-7] = 0
-    # # P = np.eye(4)
-    # # P[:3, -1] = end_point
-    # P_coordinates[-1, :] = end_point
-    # vals_target = update_target_vals(P, empty_vals)
-    # vals_target.update({l0: l0_val, l2: l2_val, l3: l3_val, l4: l4_val, le: le_val})
-    # d1_points[-1], theta2_points[-1], theta3_points[-1], theta4_points[-1] = \
-    #     solve_inverse_kinematics(vals_target)
-    # print(d1_points[-1], theta2_points[-1]/np.pi*180,
-    #       theta3_points[-1]/np.pi*180, theta4_points[-1]/np.pi*180)
-
     # hard-coded end point
-    d1_points[-1] = 10
+    d1_points[-1] = 10.
     theta2_points[-1] = np.pi - 0.05
     theta3_points[-1] = -np.pi/4
-    theta4_points[-1] = 0
+    theta4_points[-1] = 0.
+
+    T = fwd_kinematics(theta2_points[-1], theta3_points[-1],
+                       theta4_points[-1], d1_points[-1])
+    P_coordinates[-1, :] = T[:3, -1]
     return d1_points, theta2_points, theta3_points, theta4_points, P_coordinates
 
 
