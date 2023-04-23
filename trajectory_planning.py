@@ -66,7 +66,7 @@ T0e = T04 * T4e
 Pee = sp.Matrix([0, 0, 0, 1])
 P0e = T0e * Pee
 
-num_via_points = 1
+num_via_points = 5
 
 
 def get_random_trans_mat():
@@ -167,6 +167,7 @@ def get_random_via_points(end_point):
     #     solve_inverse_kinematics(vals_target)
     # print(d1_points[-1], theta2_points[-1]/np.pi*180,
     #       theta3_points[-1]/np.pi*180, theta4_points[-1]/np.pi*180)
+
     # hard-coded end point
     d1_points[-1] = 10
     theta2_points[-1] = np.pi - 0.05

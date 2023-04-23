@@ -27,6 +27,9 @@ class MessageBox:
                 msg = 'Driving to the end point...'
             else:
                 msg = 'Driving to the start point...'
+        if self.game_stats.manipulator:
+            msg = 'Watching manipulator moving...\n' \
+                    '(Press Esc to stop)'
 
         self.surface.fill(self.settings['bg_color'])
 

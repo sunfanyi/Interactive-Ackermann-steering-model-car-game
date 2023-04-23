@@ -21,15 +21,15 @@ def check_event(settings, game_stats, workspace, car, large_car,
                 zoom_buttons, restart_button, trimetric_button,
                 axes_buttons, switch_buttons, manipulator):
     for event in pygame.event.get():
-        if game_stats.manipulator:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
-                    game_stats.manipulator = False
-            return
-
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if game_stats.manipulator:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    game_stats.manipulator = False
+            return
+
         elif event.type == pygame.KEYDOWN:
             check_keydown_event(event, game_stats, workspace, car, large_car, manipulator)
         elif event.type == pygame.KEYUP:
@@ -89,7 +89,7 @@ def check_keydown_event(event, game_stats, workspace, car, large_car, manipulato
     check_car_moving(event, game_stats, car, large_car)
     if event.key == pygame.K_p:
         game_stats.manipulator = True
-        manipulator.current_frame = 0
+        manipulator.init_trajectory()
 
 
 def restart_event(car, large_car, game_stats):
@@ -152,6 +152,14 @@ def check_keyup_event(event, car, large_car):
     elif event.key == pygame.K_SPACE:
         car.brake = False
         large_car.brake = False
+
+
+def wait_key_press(key):
+    while True:  # wait for key press
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == key:
+                    return
 
 
 def detect_collision(game_stats, screen, car, large_car, workspace, manipulator):
@@ -224,7 +232,7 @@ def detect_collision(game_stats, screen, car, large_car, workspace, manipulator)
             car.reset_motion()
             game_stats.started = False
             game_stats.manipulator = True
-            manipulator.current_frame = 0
+            manipulator.init_trajectory()
             large_car.moving_fwd = False  # suppress wheel spinning
             time.sleep(0.3)
 

@@ -37,6 +37,8 @@ def rotation(theta, direction):
         R = sp.Matrix([[sp.cos(theta), -sp.sin(theta), 0],
                        [sp.sin(theta), sp.cos(theta), 0],
                        [0, 0, 1]])
+    else:
+        raise ValueError('Direction must be x, y or z')
     return R
 
 
@@ -89,10 +91,10 @@ def matprint(matrix, alias=None):
 def get_trans_mat(a, alpha, d, theta, return_P=False):
     """
     Obtain the transformation matrix from DH Parameters
-    :param a: Link angle (in deg)
-    :param alpha: Link twist
-    :param d: Link offset (in deg)
-    :param theta: Joint angle
+    :param a: Link length
+    :param alpha: Link twist (in deg)
+    :param d: Link offset
+    :param theta: Joint angle (in deg)
     :param return_P: return the 3x1 translation matrix
     :return: transformation matrix and rotation matrix
     """

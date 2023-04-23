@@ -7,7 +7,6 @@
 
 import pygame
 import time
-import sys
 
 import game_function as gf
 from workspace import Workspace
@@ -19,8 +18,6 @@ from game_stats import GameStats
 from control_panel import ControlPanel
 from message_box import MessageBox
 from manipulator import Manipulator
-
-import numpy as np
 
 
 def run_game():
@@ -62,14 +59,7 @@ def run_game():
     # frame_rate = 0
     # start_time = pygame.time.get_ticks()
 
-    subwindow = None
-    subwindow_topleft = (0, 0)
-
-    avg = 0
-    i = 0
     while True:
-        start = time.time()
-
         screen.blit(screen1, settings.screen1['topleft'])
         screen.blit(screen2, settings.screen2['topleft'])
         # screen.fill((255, 255, 255))
@@ -97,9 +87,11 @@ def run_game():
         pygame.display.update()
 
         if manipulator.pause:
-            time.sleep(2)
-        clock.tick(frame_rate)
+            gf.wait_key_press(pygame.K_ESCAPE)
+            game_stats.manipulator = False
+            manipulator.pause = False
 
+        clock.tick(frame_rate)
 
         # frame_count += 1
         # # Calculate the elapsed time and frame rate
@@ -111,16 +103,6 @@ def run_game():
         # print(my_car.car_origin3d)
         # print(my_car.car_origin2d)
         # print(my_car.car_orientation)
-        # i += 1
-        # end = time.time()
-        # last = avg
-        # new = end - start
-        # avg = (last*(i-1) + new)/i
-        # print('average time interval: ', avg)
-        # if i == 1000:
-        #     i = 0
-        #     for j in range(10):
-        #         print('reset')
 
 
 run_game()

@@ -5,7 +5,6 @@
 # @Github  : https://github.com/sunfanyi
 # @Software: PyCharm
 
-import time
 import pygame
 import numpy as np
 import game_function as gf
@@ -16,55 +15,37 @@ from trajectory_planning import get_path, do_trajectory_planning
 
 
 class Manipulator:
-    zoom_duration = 1
-    frame_rate = 60
-    final_frames = int(zoom_duration * frame_rate)
+    final_frames = 60
 
-    res = 20  # resolution of trajectory points
+    res = 15  # resolution of trajectory points
 
     def __init__(self, settings, screen, game_stats, workspace, car):
         self.settings = settings
+        self.window_settings = settings.manipulator_window
         self.screen = screen
         self.game_stats = game_stats
         self.workspace = workspace
         self.car = car
 
-        self.current_frame = 0
-        self.pause = False
-
-        self.w = 850
-        self.h = 400
-        self.sur_map = pygame.Surface((self.w, self.h))
-        self.sur_robot = pygame.Surface((self.w, self.h),
+        self.sur_map = pygame.Surface((self.window_settings['w'],
+                                       self.window_settings['h']))
+        self.sur_robot = pygame.Surface((self.window_settings['w'],
+                                         self.window_settings['h']),
                                         pygame.SRCALPHA)
 
         self._get_3D_map()
         self._get_zoomed_car()
 
-        # a = [0.5 * zoomed_car.wheel_base * np.cos(-3.264),
-        #      0.5 * zoomed_car.wheel_base * np.sin(-3.264),]
-        self.pointer = 0
-        self.end_memory = []
-        end_point = self.workspace.green_end - self.workspace.blue_end
-        end_point = np.array([end_point[0] - 0.5 * car.wheel_base * np.cos(-3.264),
-                              end_point[1] - 0.5 * car.wheel_base * np.sin(-3.264),
-                              -(self.car.height+self.car.wheel_radius)], dtype=np.float32)
-        # print(np.sqrt(end_point[0] ** 2 + end_point[1] ** 2))
-        # print(self.car.height+self.car.wheel_radius)
-        self.paths = do_trajectory_planning(end_point, self.res)
-        self.P_coordinates = self.paths[4]
-        # print(self.paths[0])
-        # print(self.P_coordinates)
-        self.num_points = len(self.paths[0])
+        self.init_trajectory()
 
     def _get_3D_map(self):
         img = self.workspace.img
 
         # pre-cropped:
-        dx = 700
-        dy = int(dx / 1.42)
-        x0 = 800
-        y0 = 600
+        dx = self.window_settings['dx']
+        dy = self.window_settings['dy']
+        x0 = self.window_settings['x0']
+        y0 = self.window_settings['y0']
         self.zoom_factor = img.shape[0] / dy
 
         img = img[y0:y0 + dy, x0:x0 + dx]
@@ -102,7 +83,8 @@ class Manipulator:
 
         self.sur_map = pygame.surfarray.make_surface(map3d)
         self.sur_map = pygame.transform.scale(self.sur_map,
-                                              (self.w, self.h))
+                                              (self.window_settings['w'],
+                                               self.window_settings['h']))
 
         # find blue end position after warp perspective transformation
         point = self.workspace.blue_end
@@ -133,12 +115,30 @@ class Manipulator:
                   zoomed_car.height + zoomed_car.wheel_radius]
         self.manipulator_origin2d = gf.point_3d_to_2d(*origin, offset=self.car_origin2d)
 
-    def update(self):
-        self.sur_robot.fill((0, 0, 0, 0))
-        if self.current_frame >= self.final_frames:
-            self.pause = False
-            # zooming-in finish, manipulator moving
+    def init_trajectory(self):
+        """
+        Initialise the random trajectory everytime the condition satisfies
+        """
+        self.current_frame = 0
+        self.pause = False
 
+        self.pointer = 0
+        self.end_memory = []
+        end_point = self.workspace.green_end - self.workspace.blue_end
+        end_point = np.array([end_point[0] - 0.5 * self.car.wheel_base * np.cos(-3.264),
+                              end_point[1] - 0.5 * self.car.wheel_base * np.sin(-3.264),
+                              -(self.car.height+self.car.wheel_radius)], dtype=np.float32)
+        # print(np.sqrt(end_point[0] ** 2 + end_point[1] ** 2))
+        # print(self.car.height+self.car.wheel_radius)
+        self.paths = do_trajectory_planning(end_point, self.res)
+        self.P_coordinates = self.paths[4]
+        self.num_points = len(self.paths[0])
+
+    def update(self):
+        self.sur_robot.fill(self.window_settings['bg_color'])
+        if self.current_frame >= self.final_frames:
+            # zooming-in finish, manipulator moving
+            self.pause = False
             joints = get_path(self.paths, self.pointer, self.end_memory)
             if self.pointer == self.num_points - 1:
                 self.P_coordinates[-1] = self.end_memory[0]
@@ -154,7 +154,10 @@ class Manipulator:
             for point in last_via_points:
                 point = point * self.zoom_factor
                 pos2d = gf.point_3d_to_2d(*point, offset=self.manipulator_origin2d)
-                pygame.draw.circle(self.sur_robot, (0, 0, 0), pos2d, 5)
+                if self.pointer == self.num_points - 1:
+                    pygame.draw.circle(self.sur_robot, (0, 0, 0), pos2d, 5)
+                else:
+                    pygame.draw.circle(self.sur_robot, (100, 100, 100), pos2d, 5)
 
             joints = [joint * self.zoom_factor for joint in joints]
             joints = [gf.point_3d_to_2d(*joint, offset=self.manipulator_origin2d)
@@ -184,13 +187,14 @@ class Manipulator:
             scale_factor = self.current_frame / self.final_frames
 
             # Scale the subwindow
-            scaled_width = int(self.w * scale_factor)
-            scaled_height = int(self.h * scale_factor)
+            scaled_width = int(self.window_settings['w'] * scale_factor)
+            scaled_height = int(self.window_settings['h'] * scale_factor)
             self.sur_map_scaled = pygame.transform.scale(
                 self.sur_map, (scaled_width, scaled_height))
 
-            self.topleft = (int(x0 + scale_factor * (xf - x0)) + 0,
-                            int(y0 + scale_factor * (yf - y0)) + 170)
+            self.topleft = np.array([x0 + scale_factor * (xf - x0),
+                                     y0 + scale_factor * (yf - y0)], dtype=np.int32)
+            self.topleft = self.topleft + self.settings.map_screen['topleft']
 
             self.current_frame += 1
 
