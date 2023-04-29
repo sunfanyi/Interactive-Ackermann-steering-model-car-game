@@ -18,11 +18,6 @@ l2 = sp.symbols('l_2')
 l3 = sp.symbols('l_3')
 l4 = sp.symbols('l_4')
 le = sp.symbols('l_e')
-l0_val = 50
-l2_val = 250
-l3_val = 200
-l4_val = 60
-le_val = 120
 
 l0_val = 50
 l2_val = 170
@@ -66,7 +61,7 @@ T0e = T04 * T4e
 Pee = sp.Matrix([0, 0, 0, 1])
 P0e = T0e * Pee
 
-num_via_points = 3
+num_via_points = 5
 
 
 def fwd_kinematics(theta2_val, theta3_val, theta4_val, d1_val):
