@@ -45,7 +45,7 @@ Useful files in this project:
 
 ### 3.1 Color Extraction
 
-The information to be extracted from the map includes the start and end positions (blue), the manipulator target positions (green) and the car path (red), as shown below:
+The information to be extracted from the map includes the start and end positions (blue), the manipulator target position (green) and the car path (red), as shown below:
 
 ![](assets/logs/CWMap.jpg)
 
