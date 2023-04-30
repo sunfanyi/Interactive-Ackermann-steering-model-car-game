@@ -41,7 +41,7 @@ class Settings:
         'topleft': np.array([0, 170]),
         'w': 850,
         'h': 400,
-        'path': 'Figures/CWMap.jpg',
+        'path': 'CWMap.png',
         'xlim': xlim,
         'ylim': ylim,
         'zlim': zlim,
@@ -115,7 +115,7 @@ class Settings:
         'topleft': (265, 260),
         'w': 100,
         'h': 100,
-        'path': 'Figures/steering_wheel.png',
+        'path': 'steering_wheel.png',
     }
 
     # Keyboard panel
@@ -124,18 +124,18 @@ class Settings:
         'space_topleft': (30, y_aligned),
         'space_w': 150,
         'space_h': 50,
-        'space_path': 'Figures/keyspace.png',
-        'space_pressed_path': 'Figures/keyspace_pressed.png',
+        'space_path': 'keyspace.png',
+        'space_pressed_path': 'keyspace_pressed.png',
 
         'arrows_w': 50,
         'arrows_h': 50,
         # lists for up, down, left, right:
         'arrows_topleft': [(275, y_aligned - 60), (275, y_aligned),
                            (215, y_aligned), (335, y_aligned)],
-        'arrows_path': ['Figures/keyup.png', 'Figures/keydown.png',
-                        'Figures/keyleft.png', 'Figures/keyright.png'],
-        'arrows_pressed_path': ['Figures/keyup_pressed.png', 'Figures/keydown_pressed.png',
-                                'Figures/keyleft_pressed.png', 'Figures/keyright_pressed.png'],
+        'arrows_path': ['keyup.png', 'keydown.png',
+                        'keyleft.png', 'keyright.png'],
+        'arrows_pressed_path': ['keyup_pressed.png', 'keydown_pressed.png',
+                                'keyleft_pressed.png', 'keyright_pressed.png'],
     }
 
     # ======================================== Image Buttons ======================================== #
@@ -144,12 +144,12 @@ class Settings:
     view_dx = 10
     view_dy = 5
     view_topleft = (650, 70)  # center of the topleft icon
-    paths = ['Figures/x_anticlockwise.png',
-             'Figures/x_clockwise.png',
-             'Figures/y_anticlockwise.png',
-             'Figures/y_clockwise.png',
-             'Figures/z_anticlockwise.png',
-             'Figures/z_clockwise.png']
+    paths = ['x_anticlockwise.png',
+             'x_clockwise.png',
+             'y_anticlockwise.png',
+             'y_clockwise.png',
+             'z_anticlockwise.png',
+             'z_clockwise.png']
     centers = [(view_topleft[0], view_topleft[1]),
                (view_topleft[0], view_topleft[1] + view_w + view_dy),
                (view_topleft[0] + view_w + view_dx, view_topleft[1]),
@@ -168,7 +168,7 @@ class Settings:
         center2global(buts_rot_axes[i], screen1)
 
     # switch between game and developer mode
-    paths = ['Figures/switch_enable.png', 'Figures/switch_disable.png']
+    paths = ['switch_enable.png', 'switch_disable.png']
     buts_switch = []
     for i in range(2):
         buts_switch.append({

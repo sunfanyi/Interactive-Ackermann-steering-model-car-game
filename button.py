@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import pygame.font
+from game_function import resource_path
 
 
 class TextButton:
@@ -53,7 +54,8 @@ class ImgButton:
         self.center = settings['center']
 
         self.path = settings['path']
-        self.img = pygame.image.load(self.path)
+        asset_url = resource_path(self.path)
+        self.img = pygame.image.load(asset_url)
 
         self.bg_color = settings['bg_color'] \
             if 'bg_color' in settings else (255, 255, 255, 0)

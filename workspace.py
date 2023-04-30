@@ -18,9 +18,11 @@ class Workspace:
         self.screen = screen
         self.settings = settings
         self.map_settings = settings.map_screen
-        
-        img = cv2.imread(self.map_settings['path'])
+
+        asset_url = gf.resource_path(self.map_settings['path'])
+        img = cv2.imread(asset_url)
         self.img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # self.img = np.ones([3680, 5224, 3]).astype(np.uint8)
 
         self.R_view = gf.trimetric_view()
         self._get_3D_map()

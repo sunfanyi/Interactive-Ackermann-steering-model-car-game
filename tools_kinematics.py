@@ -48,15 +48,32 @@ def add_translation(R, t=sp.Matrix([0, 0, 0, 1])):
     return T
 
 
-def eqnprint(symbol, alias=None, expression=None, ans=None):
-    if ans is None:
-        expr_latex = sp.latex(symbol.subs(alias)) + '=' + sp.latex(expression.subs(alias))
-        display(Math(expr_latex))
-    elif expression is None:
-        display(Math(sp.latex(symbol.subs(alias)) + '=' + str(ans)))
+def eqnprint(left=None, alias=None, right=None, ans=None, simplify=True):
+    def _concat_expression(expression):
+        if type(expression) is list:
+            exp = ''
+            for each in expression:
+                if simplify:
+                    each = sp.simplify(each)
+                exp = exp + '{' + sp.latex(each.subs(alias)) + '}'
+        else:
+            if simplify:
+                expression = sp.simplify(expression)
+            exp = sp.latex(expression.subs(alias))
+        return exp
+
+    if left is not None:
+        left = _concat_expression(left)
+    if right is not None:
+        right = _concat_expression(right)
+
+    if right is None:
+        expr_latex = left + '=' + str(ans)
+    elif ans is None:
+        expr_latex = left + '=' + right
     else:
-        expr_latex = sp.latex(symbol.subs(alias)) + '=' + sp.latex(expression.subs(alias)) + '=' + str(ans)
-        display(Math(expr_latex))
+        expr_latex = left + '=' + right + '=' + str(ans)
+    display(Math(expr_latex))
 
 
 def get_sym(symbol, sub='', sup='', dot=False, show=False):

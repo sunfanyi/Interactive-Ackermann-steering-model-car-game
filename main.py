@@ -5,6 +5,7 @@
 # @Github  : https://github.com/sunfanyi
 # @Software: PyCharm
 
+
 import pygame
 import time
 
@@ -105,5 +106,6 @@ def run_game():
         # print(my_car.car_orientation)
 
 
-run_game()
+if __name__ == '__main__':
+    run_game()
 

@@ -9,6 +9,8 @@ import pygame
 import numpy as np
 import cv2
 
+from game_function import resource_path
+
 
 class ControlPanel:
     def __init__(self, settings, screen, game_stats, workspace, car):
@@ -22,19 +24,28 @@ class ControlPanel:
         self.zoom_settings = settings.zoom_region
 
         self.process_keyboard_imgs()
-        self.img_steer = pygame.image.load(self.settings.steering_wheel['path'])
+        asset_url = resource_path(self.settings.steering_wheel['path'])
+        self.img_steer = pygame.image.load(asset_url)
 
         self.draw_frame()
 
     def process_keyboard_imgs(self):
-        imgs_arrow = [pygame.image.load(
-            self.key_settings['arrows_path'][i]) for i in range(4)]
-        imgs_arrow_pressed = [pygame.image.load(
-            self.key_settings['arrows_pressed_path'][i]) for i in range(4)]
-        img_space = pygame.image.load(
-            self.key_settings['space_path'])
-        img_space_pressed = pygame.image.load(
-            self.key_settings['space_pressed_path'])
+        # imgs_arrow = [pygame.image.load(
+        #     self.key_settings['arrows_path'][i]) for i in range(4)]
+        # imgs_arrow_pressed = [pygame.image.load(
+        #     self.key_settings['arrows_pressed_path'][i]) for i in range(4)]
+        # img_space = pygame.image.load(
+        #     self.key_settings['space_path'])
+        # img_space_pressed = pygame.image.load(
+        #     self.key_settings['space_pressed_path'])
+        imgs_arrow = [pygame.image.load(resource_path(
+            self.key_settings['arrows_path'][i])) for i in range(4)]
+        imgs_arrow_pressed = [pygame.image.load(resource_path(
+            self.key_settings['arrows_pressed_path'][i])) for i in range(4)]
+        img_space = pygame.image.load(resource_path(
+            self.key_settings['space_path']))
+        img_space_pressed = pygame.image.load(resource_path(
+            self.key_settings['space_pressed_path']))
 
         w_arrow = self.key_settings['arrows_w']
         h_arrow = self.key_settings['arrows_h']

@@ -5,6 +5,7 @@
 # @Github  : https://github.com/sunfanyi
 # @Software: PyCharm
 
+import os
 import sys
 import numpy as np
 import pygame
@@ -221,7 +222,7 @@ def detect_collision(game_stats, screen, car, large_car, workspace, manipulator)
     if not game_stats.started:
         # ============================= check collision with blue start mask =============================
         if start_mask[int(car.car_origin3d[1]),
-                      int(car.car_origin3d[0])]:
+        int(car.car_origin3d[0])]:
             car.reset_positions('start')
             car.reset_motion()
             game_stats.started = True
@@ -231,7 +232,7 @@ def detect_collision(game_stats, screen, car, large_car, workspace, manipulator)
     else:
         # ============================= check collision with blue end mask =============================
         if end_mask[int(car.car_origin3d[1]),
-                    int(car.car_origin3d[0])]:
+        int(car.car_origin3d[0])]:
             car.reset_positions('end')
             car.reset_motion()
             game_stats.started = False
@@ -365,3 +366,23 @@ def cv2_to_pygame(image):
     image = np.fliplr(image)
     image = np.rot90(image)
     return image
+
+
+def resource_path(file_name):
+    """
+    Helper function for PyInstaller, used when loading images.
+    Deal with static assets such as images with this code.
+    """
+    # try:
+    #     # PyInstaller creates a temp folder and stores path in _MEIPASS
+    #     base_path = sys._MEIPASS
+    # except Exception:
+    #     base_path = os.path.abspath(".")
+    if getattr(sys, 'frozen', False):  # PyInstaller adds this attribute
+        # Running in a bundle
+        base_path = sys._MEIPASS
+    else:
+        # Running in normal Python environment
+        base_path = os.path.dirname(__file__)
+    asset_path = os.path.join(base_path, 'assets')
+    return os.path.join(asset_path, file_name)
