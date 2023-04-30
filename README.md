@@ -111,11 +111,11 @@ The car, composed of several lines in 3D space, also has its 2D position represe
 
 ## 4. Mobile Robotics
 
-### 4. Mobile Car Design
+### 4.1 Mobile Car Design
 
 The mobile car was designed based on a four-wheel Ackermann model, with two activate rear wheels and two passive front wheels. The front wheels are steerable standard and the rear wheels are fixed standard. This explicitly means that both the velocities and the orientations of the front wheels can be determined from the velocities of the rear wheels. A schematic sketch of the car dimension is shown below:
 
-![](assets/logs/car_dimension.png)
+![](assets/logs/car_dimension.jpg)
 
 where $A$ is the car length, $B$ is the car width, $l$ is the wheelbase and $L$ is the distance from the manipulator base to each wheel:
 
@@ -159,7 +159,7 @@ $$
 \end{align}
 $$
 
-where ${^{0}_{I}R}$ is:
+where:
 
 $$
 \begin{equation}
@@ -169,8 +169,6 @@ $$
     0 & 0 & 1\end{matrix}\right]
 \end{equation}
 $$
-
-$\dot{^IP}$ is:
 
 $$
 \begin{equation}
@@ -274,7 +272,7 @@ $$
 
 Consequently, the front wheels information $\dot{\phi_{FL}}$, $\dot{\phi_{FR}}$, $\beta_{FL}$ and $\beta_{FR}$ can ideally be found using the first two rows of the rolling and no-sliding matrices. However, these are not straight-forward. To better understand the Ackermann model, they were solved by considering the geometry:
 
-![](assets/logs/Ackermann_geometry.png)
+![](assets/logs/Ackermann_geometry.jpg)
 
 where $V$ is the linear velocity of each wheel, $R$ is the turning radius and $ICR$ is the instantaneous center of rotation.
 
