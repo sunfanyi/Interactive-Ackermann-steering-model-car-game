@@ -12,10 +12,13 @@ A mini-game was developed using *Pygame* which enables the user to control the m
 
 ## 2. Software Architecture
 
-This is a software based on *Pygame* and *OpenCV* using *Python3*. In order to run the game, these two packages should be installed (otherwise, the game can be run using the *.exe* file):
+This is a software based on *Pygame* and *OpenCV* using *Python3*. In order to run this project, these two packages should be installed (otherwise, the game can be run using the *.exe* file):
 ```
 pip install pygame
 pip install opencv-python
+conda install matplotlib
+conda install sympy
+conda install IPython
 ```
 
 Useful files in this project:

@@ -44,7 +44,7 @@ def extract_color(img, color):
     # Apply the mask to the original image
     result = img.copy()
     result[mask == 0, :] = [0, 0, 0]
-    return result, mask.astype(np.bool)
+    return result, mask.astype(bool)
 
 
 def mask2xy(mask):
