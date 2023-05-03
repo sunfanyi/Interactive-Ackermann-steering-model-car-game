@@ -191,10 +191,12 @@ $$
 \begin{equation}
     \left[\begin{matrix}1 & 0 & - \frac{\sqrt{B^{2} + 4 l^{2}}}{2 \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}\\
     1 & 0 & \frac{\sqrt{B^{2} + 4 l^{2}}}{2 \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}\\
-    0 & 1 & - \frac{l \sqrt{B^{2} + 4 l^{2}}}{B \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}\end{matrix}\right] {^{0}_{I}R} \dot{^{I}P} - 
-    \left[\begin{matrix}r & 0\\
+    0 & 1 & - \frac{l \sqrt{B^{2} + 4 l^{2}}}{B \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}\end{matrix}\right] {^0_IR} \dot{^{I}P} - 
+    \left[\begin{matrix}
+    r & 0\\
     0 & r\\ 
-    0 & 0\end{matrix}\right] 
+    0 & 0
+    \end{matrix}\right] 
     \left[\begin{matrix}
     \dot{\phi_{RL}}\\
     \dot{\phi_{RR}}\end{matrix}\right] =
@@ -206,10 +208,9 @@ $$
 
 This can be rearranged:
 
-
 $$
 \begin{align}
-    \dot{^IP} &= {^{I}_{0}R}
+    \dot{^IP} &= {^I_0R}
     \left[\begin{matrix}\frac{r}{2} & \frac{r}{2}\\
     - \frac{l r}{B} & \frac{l r}{B}\\
     - \frac{r \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}{\sqrt{B^{2} + 4 l^{2}}} & \frac{r \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}{\sqrt{B^{2} + 4 l^{2}}}\end{matrix}\right]
@@ -217,7 +218,7 @@ $$
     \dot{\phi_{RL}}\\
     \dot{\phi_{RR}}\end{matrix}\right] 
 \\
-    &= {^{I}_{0}R}
+    &= {^I_0R}
     \left[\begin{matrix}\frac{\dot{\phi_{RL}} r}{2} + \frac{\dot{\phi_{RR}} r}{2}\\
     - \frac{\dot{\phi_{RL}} l r}{B} + \frac{\dot{\phi_{RR}} l r}{B}\\
     - \frac{\dot{\phi_{RL}} r \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}{\sqrt{B^{2} + 4 l^{2}}} + \frac{\dot{\phi_{RR}} r \sqrt{1 + \frac{4 l^{2}}{B^{2}}}}{\sqrt{B^{2} + 4 l^{2}}}\end{matrix}\right]
